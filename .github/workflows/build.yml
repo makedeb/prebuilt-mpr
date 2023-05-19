@@ -1,0 +1,38 @@
+# Build the Rust binary used in the Prebuilt-MPR system.
+name: build
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      - name: Setup makedeb
+        uses: makedeb/setup-makedeb@main
+        with:
+          makedeb-repo: false
+          pbmpr-repo: true
+      - name: Install Needed Dependencies
+        run: |
+          sudo apt-get install just -y
+          just install-deps
+      - name: Build Binary
+        run: cargo build --release
+      - name: Get Version for Release
+        id: cargo-version
+        run: |
+          version="$(cargo metadata --no-deps --format-version=1  | jq -r '.packages[].version')"
+          echo "VERSION=${version}" >> "${GITHUB_OUTPUT}"
+      - name: Create Release
+        env:
+          GH_TOKEN: "${{ github.token }}"
+        run: |
+          notes='### Note:'
+          notes+=$'\n'
+          notes+='The binaries in this release are designed for internal use by the Prebuilt-MPR system, and are not intended for use by end users. '
+          notes+="Please avoid using them unless you're working on the Prebuilt-MPR codebase itself."
+          gh release create "v${{ steps.cargo-version.outputs.VERSION }}" --notes "${notes}" target/release/pbmpr
