@@ -20,6 +20,8 @@ jobs:
         run: |
           sudo apt-get install just -y
           just install-deps
+      - name: Restore Rust Cache
+        uses: Swatinem/rust-cache@v2
       - name: Build Binary
         run: cargo build --release
       - name: Get Version for Release
@@ -31,8 +33,5 @@ jobs:
         env:
           GH_TOKEN: "${{ github.token }}"
         run: |
-          notes='### Note:'
-          notes+=$'\n'
-          notes+='The binaries in this release are designed for internal use by the Prebuilt-MPR system, and are not intended for use by end users. '
-          notes+="Please avoid using them unless you're working on the Prebuilt-MPR codebase itself."
-          gh release create "v${{ steps.cargo-version.outputs.VERSION }}" --notes "${notes}" target/release/pbmpr
+          gh release edit latest --target main
+          gh release upload latest --clobber target/release/pbmpr
