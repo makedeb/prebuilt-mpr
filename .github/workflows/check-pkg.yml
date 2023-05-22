@@ -42,3 +42,4 @@ jobs:
         run: ./pbmpr check-pkg "${{ inputs.pkgbase }}"
         env:
           GITHUB_TOKEN: "${{ env.GH_TOKEN }}"
+          GITHUB_USERNAME: "kavplex"

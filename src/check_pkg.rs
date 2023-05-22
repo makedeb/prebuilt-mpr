@@ -7,7 +7,7 @@ use rust_apt::{cache::Cache, util as apt_util};
 use std::{cmp::Ordering, env, fs, path::Path};
 use walkdir::WalkDir;
 
-pub async fn check_pkg(gh_token: &str, pkg: &str) -> exitcode::ExitCode {
+pub async fn check_pkg(gh_user: &str, gh_token: &str, pkg: &str) -> exitcode::ExitCode {
     let packages = match cache::get_mpr_packages().await {
         Ok(pkgs) => pkgs,
         Err(err) => {
@@ -35,7 +35,7 @@ pub async fn check_pkg(gh_token: &str, pkg: &str) -> exitcode::ExitCode {
         ) == Ordering::Less
     {
         log::info!("Updating '{pkg}'...");
-        update_pkg(gh_token, package).await;
+        update_pkg(gh_user, gh_token, package).await;
     } else {
         log::info!("'{pkg}' is up to date!");
     };
@@ -43,10 +43,10 @@ pub async fn check_pkg(gh_token: &str, pkg: &str) -> exitcode::ExitCode {
     exitcode::OK
 }
 
-async fn update_pkg(gh_token: &str, pkg: &MprPackage) {
+async fn update_pkg(gh_user: &str, gh_token: &str, pkg: &MprPackage) {
     let mpr_repo_url = format!("https://{}/{}", util::MPR_URL, pkg.pkgbase);
     let gh_repo_url = format!(
-        "https://{gh_token}:x-oauth-basic@github.com/{}/{}",
+        "https://{gh_user}:{gh_token}@github.com/{}/{}",
         util::PBMPR_GITHUB_ORG,
         util::PBMPR_GITHUB_REPO
     );

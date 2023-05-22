@@ -24,6 +24,9 @@ enum Command {
     RunChecks,
     /// Check if a package in the Prebuilt-MPR is out of date, creating a PR on GitHub if it is
     CheckPkg {
+        /// The username of a GitHub account.
+        #[arg(long = "github-username", env = "GITHUB_USERNAME")]
+        github_username: String,
         /// The package to check
         pkg: String,
     },
@@ -53,7 +56,10 @@ async fn main() {
     // Run the CLI.
     let exit_code = match cli.command {
         Command::RunChecks => run_checks::run_checks().await,
-        Command::CheckPkg { pkg } => check_pkg::check_pkg(&cli.github_token, &pkg).await,
+        Command::CheckPkg {
+            github_username,
+            pkg,
+        } => check_pkg::check_pkg(&github_username, &cli.github_token, &pkg).await,
     };
     process::exit(exit_code);
 }
