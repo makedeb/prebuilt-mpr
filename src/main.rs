@@ -3,6 +3,7 @@ use log::LevelFilter;
 use octocrab::Octocrab;
 use std::{path::Path, process};
 
+mod cache;
 mod check_pkg;
 mod pkglist;
 mod run_checks;
@@ -44,7 +45,7 @@ async fn main() {
 
     // Set up the global octocrab instance.
     let crab = Octocrab::builder()
-        .personal_token(cli.github_token)
+        .personal_token(cli.github_token.clone())
         .build()
         .unwrap();
     octocrab::initialise(crab);
@@ -52,7 +53,7 @@ async fn main() {
     // Run the CLI.
     let exit_code = match cli.command {
         Command::RunChecks => run_checks::run_checks().await,
-        Command::CheckPkg { pkg } => check_pkg::check_pkg(pkg).await,
+        Command::CheckPkg { pkg } => check_pkg::check_pkg(&cli.github_token, &pkg).await,
     };
     process::exit(exit_code);
 }

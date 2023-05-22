@@ -7,6 +7,9 @@ on:
       pkgbase:
         required: true
         type: string
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   check-pkg:
@@ -14,6 +17,14 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
+      - name: Import Vault Secrets
+        uses: hashicorp/vault-action@v2
+        with:
+          url: https://vault.hunterwittenborn.com
+          method: jwt
+          role: github
+          secrets: |
+            kv/data/ci github_api_key | GH_TOKEN
       - name: Setup makedeb
         uses: makedeb/setup-makedeb@main
         with:
@@ -25,11 +36,9 @@ jobs:
           just install-deps
       - name: Download Prebuilt-MPR Helper Binary
         run: gh release download -p pbmpr
-        env:
-          GH_TOKEN: "${{ github.token }}"
       - name: Make Prebuilt-MPR Helper Binary Executable
         run: chmod +x ./pbmpr
       - name: Run Update Checks for the Specified Package
         run: ./pbmpr check-pkg "${{ inputs.pkgbase }}"
         env:
-          GITHUB_TOKEN: "${{ github.token }}"
+          GITHUB_TOKEN: "${{ env.GH_TOKEN }}"

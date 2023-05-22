@@ -5,7 +5,6 @@ use std::{thread, time::Duration};
 pub async fn run_checks() -> exitcode::ExitCode {
     let crab = octocrab::instance();
     let actions = crab.actions();
-    let _count = 0;
 
     for pkgbase in pkglist::PKGLIST.keys() {
         // Run the workflow job.
