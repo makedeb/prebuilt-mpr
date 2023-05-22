@@ -1,0 +1,31 @@
+# Trigger Workflow Runs for Prebuilt-MPR Update Checks.
+name: run-checks
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+
+jobs:
+  run-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      - name: Setup makedeb
+        uses: makedeb/setup-makedeb@main
+        with:
+          makedeb-repo: false
+          pbmpr-repo: true
+      - name: Install Needed Dependencies
+        run: |
+          sudo apt-get install just -y
+          just install-deps
+      - name: Download Prebuilt-MPR Helper Binary
+        run: gh release download -p pbmpr
+        env:
+          GH_TOKEN: "${{ github.token }}"
+      - name: Make Prebuilt-MPR Helper Binary Executable
+        run: chmod +x ./pbmpr
+      - name: Trigger Workflow Runs for Update Checks
+        run: ./pbmpr run-checks
+        env:
+          GITHUB_TOKEN: "${{ github.token }}"
