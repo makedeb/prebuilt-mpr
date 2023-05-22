@@ -254,7 +254,7 @@ async fn update_pkg(gh_user: &str, gh_token: &str, pkg: &MprPackage) {
         .await
         .unwrap();
 
-    if active_pulls.items.is_empty() {
+    if !active_pulls.items.is_empty() {
         log::info!("PR already exists, skipping PR creation.");
     } else {
         log::info!("Creating PR...");
