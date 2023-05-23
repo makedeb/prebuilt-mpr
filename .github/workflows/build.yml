@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-      - name: Setup makedeb
+      - name: Setup Prebuilt-MPR
         uses: makedeb/setup-makedeb@main
         with:
           makedeb-repo: false
