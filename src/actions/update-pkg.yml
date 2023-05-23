@@ -26,11 +26,17 @@ jobs:
       - name: Get package base
         id: pkgbase
         run: echo "pkgbase=${GITHUB_HEAD_REF}" | sed 's|pkg-update/||' >> "${GITHUB_OUTPUT}"
-      - name: Convert Comma-Separated Distro String into Distro Array
+      - name: Convert comma-separated distro string into distro array
         id: set-matrix
         run: |
           allowed_distros=()
-          blocked_distros=($(dasel -f packages.toml -w json | jq -r '."${{ steps.pkgbase.outputs.pkgbase }}".blocked_distros[]'))
+          blocked_distros_str="$(dasel -f packages.toml -w json | jq -r '."${{ steps.pkgbase.outputs.pkgbase }}".blocked_distros')"
+
+          if [[ "${blocked_distros_str}" == 'null' ]]; then
+            blocked_distros=()
+          else
+            blocked_distros=($(echo "${blocked_distros_str}" | jq -r '.[]'))
+          fi
 
           for distro in 'focal' 'jammy' 'bullseye'; do
             if ! printf '%s\n' "${blocked_distros[@]}" | grep -Fq "${distro}"; then
@@ -62,7 +68,7 @@ jobs:
         uses: makedeb/setup-makedeb@main
         with:
           pbmpr-repo: true
-      - name: Install git
+      - name: Install Git
         run: sudo apt install git -y
       - name: Correct permissions so makedeb can run
         run: chown 'makedeb:makedeb' ./ -R
