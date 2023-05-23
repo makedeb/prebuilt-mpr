@@ -13,7 +13,11 @@ use std::{
 
 /// The GitHub Actions package updater workflow file. See the code usages in
 /// this file for more info.
-static PKG_ACTIONS_FILE: &[u8] = include_bytes!("actions/update-pkg.yml");
+static PKG_UPDATE_ACTION: &[u8] = include_bytes!("actions/update-pkg.yml");
+
+/// The GitHub Actions package publisher workflow file. See the code usages in
+/// this file for more info.
+static PKG_PUBLISH_ACTION: &[u8] = include_bytes!("actions/publish-pkg.yml");
 
 pub async fn check_pkg(gh_user: &str, gh_token: &str, pkg: &str) -> exitcode::ExitCode {
     let packages = match cache::get_mpr_packages().await {
@@ -286,7 +290,11 @@ fn check_actions_file(gh_repo: &Repository, gh_remote: &mut Remote, pkg_branch: 
     fs::create_dir_all("gh-repo/.github/workflows").unwrap();
     File::create("gh-repo/.github/workflows/update-pkg.yml")
         .unwrap()
-        .write_all(PKG_ACTIONS_FILE)
+        .write_all(PKG_UPDATE_ACTION)
+        .unwrap();
+    File::create("gh-repo/.github/workflows/publish-pkg.yml")
+        .unwrap()
+        .write_all(PKG_PUBLISH_ACTION)
         .unwrap();
 
     if !gh_repo.statuses(None).unwrap().is_empty() {
@@ -298,7 +306,7 @@ fn check_actions_file(gh_repo: &Repository, gh_remote: &mut Remote, pkg_branch: 
         let mut index = gh_repo.index().unwrap();
         index
             .add_all(
-                [".github/workflows/update-pkg.yml"],
+                [".github/workflows/update-pkg.yml", ".github/workflows/publish-pkg.yml"],
                 IndexAddOption::DEFAULT,
                 None,
             )

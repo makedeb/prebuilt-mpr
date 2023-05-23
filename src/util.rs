@@ -11,6 +11,9 @@ pub static PBMPR_GITHUB_ORG: &str = "makedeb";
 /// The GitHub repository that the Prebuilt-MPR system runs in.
 pub static PBMPR_GITHUB_REPO: &str = "prebuilt-mpr-gh-actions";
 
+/// The URL of the ProGet server.
+pub static PROGET_URL: &str = "proget.makedeb.org";
+
 /// Our Git name.
 pub static GIT_NAME: &str = "Kavplex Bot";
 
@@ -20,7 +23,7 @@ pub static GIT_EMAIL: &str = "kavplex@hunterwittenborn.com";
 /// A [`reqwest::Client`] that can be used across this crate. This global is
 /// used in case any future requirements make it to where all requests need to
 /// have certain options applied to them.
-pub static CLIENT: Lazy<Client> = Lazy::new(Client::new);
+pub static HTTP_CLIENT: Lazy<Client> = Lazy::new(Client::new);
 
 /// Get our Git signature.
 pub fn git_signature() -> Signature<'static> {

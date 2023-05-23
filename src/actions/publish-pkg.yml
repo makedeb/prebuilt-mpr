@@ -1,0 +1,28 @@
+# Publish .deb packages to the Prebuilt-MPR.
+name: Publish Package
+on:
+  pull_request:
+    types:
+      - closed
+
+jobs:
+  publish-pkg:
+    name: Publish to Prebuilt-MPR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Import Vault secrets
+        uses: hashicorp/vault-action@v2
+        with:
+          url: https://vault.hunterwittenborn.com
+          token: ${{ secrets.VAULT_TOKEN }}
+          secrets: |
+            kv/data/ci github_api_key | GITHUB_TOKEN
+            kv/data/ci proget_key | PROGET_TOKEN
+      - name: Install needed dependencies
+        run: sudo apt-get install libapt-pkg-dev -y
+      - name: Download Prebuilt-MPR helper binary
+        run: gh release download -p pbmpr
+      - name: Make Prebuilt-MPR helper binary executable
+        run: chmod +x ./pbmpr
+      - name: Upload packages to Prebuilt-MPR
+        run: ./pbmpr upload-debs "${{ github.event.pull_request.number }}"

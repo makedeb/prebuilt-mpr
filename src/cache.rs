@@ -14,7 +14,7 @@ pub struct MprPackage {
 
 pub async fn get_mpr_packages() -> anyhow::Result<Vec<MprPackage>> {
     let archive_url = format!("https://{}/packages-meta-ext-v2.json.gz", util::MPR_URL);
-    let resp = util::CLIENT.get(archive_url).send().await.unwrap();
+    let resp = util::HTTP_CLIENT.get(archive_url).send().await.unwrap();
 
     let status = resp.status();
     anyhow::ensure!(status == StatusCode::OK, "Invalid response code ({status})");

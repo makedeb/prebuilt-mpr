@@ -1,5 +1,4 @@
 #![feature(async_closure)]
-
 use clap::{Parser, Subcommand};
 use log::LevelFilter;
 use octocrab::Octocrab;
@@ -9,11 +8,13 @@ mod cache;
 mod check_pkg;
 mod pkglist;
 mod run_checks;
+mod upload_debs;
 mod util;
 
 #[derive(Parser)]
 #[command(author, version, about)]
 struct Cli {
+    /// The GitHub token to authenticate with.
     #[arg(long = "github-token", env = "GITHUB_TOKEN")]
     github_token: String,
     #[command(subcommand)]
@@ -32,6 +33,14 @@ enum Command {
         github_username: String,
         /// The package to check
         pkg: String,
+    },
+    /// Upload the '.deb' files from a PR to the Prebuilt-MPR APT repository
+    UploadDebs {
+        /// The ProGet token to upload packages with.
+        #[arg(long = "proget-token", env = "PROGET_TOKEN")]
+        proget_token: String,
+        /// The PR number to fetch the '.deb' files from
+        pr: u64,
     },
 }
 
@@ -63,6 +72,9 @@ async fn main() {
             github_username,
             pkg,
         } => check_pkg::check_pkg(&github_username, &cli.github_token, &pkg).await,
+        Command::UploadDebs { pr, proget_token } => {
+            upload_debs::upload_debs(pr, &proget_token).await
+        }
     };
     process::exit(exit_code);
 }
