@@ -1,5 +1,5 @@
 # Trigger Workflow Runs for Prebuilt-MPR Update Checks.
-name: Run Checks
+name: Trigger Checks
 on:
   schedule:
     - cron: '*/10 * * * *'

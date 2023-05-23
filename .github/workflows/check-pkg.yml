@@ -1,6 +1,6 @@
 # Check if a Prebuilt-MPR package needs updated.
 name: Check Package
-run-name: Check Package: '${{ inputs.pkgbase }}'
+run-name: "Check Package: '${{ inputs.pkgbase }}'"
 on:
   workflow_dispatch:
     inputs:
