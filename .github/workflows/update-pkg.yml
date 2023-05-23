@@ -1,19 +1,10 @@
 # Update an MPR package.
-name: update-pkg-boots
-run-name: update-pkg-${{ inputs.pkgbase }}
+name: update-pkg
+#run-name: update-pkg
 on:
-  workflow_dispatch:
-    inputs:
-      pkgbase:
-        required: true
-        type: string
-      # A list of comma-separated distros to build for.
-      distros:
-        required: true
-        type: string
-permissions:
-  id-token: write
-  contents: read
+  pull_request:
+#    branches:
+#      - 'pkg/*'
 
 jobs:
   get-distro-image-matrix:
@@ -21,29 +12,42 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
+      - name: Set up makedeb and Prebuilt-MPR APT repositories
+        uses: makedeb/setup-makedeb@main
+        with:
+          makedeb-repo: false
+          pbmpr-repo: true
+      - name: Update APT cache
+        run: sudo apt update
+      - name: Install prerequisites
+        run: sudo apt install dasel jq -y
+      - name: Get package base
+        id: pkgbase
+        run: echo "pkgbase=${GITHUB_HEAD_REF}" | sed 's|pkg-update/||' >> "${GITHUB_OUTPUT}"
       - name: Convert Comma-Separated Distro String into Distro Array
         id: set-matrix
         run: |
-          # The comma-separated distro list, converted into an array.
-          distro_list=($(echo "${{ inputs.distros }}" | sed 's|,|\n|g'))
+          allowed_distros=()
+          blocked_distros=($(dasel -f packages.toml -w json | jq -r '."${{ steps.pkgbase.outputs.pkgbase }}".blocked_distros[]'))
 
-          # The distro array, prepended with 'ubuntu-' for ubuntu-based distros and 'debian-' for debian-based distros.
-          os_distro_list=()
+          for distro in 'focal' 'jammy' 'bullseye'; do
+            if ! printf '%s\n' "${blocked_distros[@]}" | grep -Fq "${distro}"; then
 
-          for distro in "${distro_list[@]}"; do
-            if [[ "${distro}" == 'bullseye' ]]; then
-              os_distro_list+=("debian-${distro}")
-            else
-              os_distro_list+=("ubuntu-${distro}")
+              if [[ "${distro}" == 'bullseye' ]]; then
+                allowed_distros+=("debian-${distro}")
+              else
+                allowed_distros+=("ubuntu-${distro}")
+              fi
             fi
           done
-          distros_json="$(printf '%s\n' "${os_distro_list[@]}" | sed 's|.*|"&", |' | tr -d '\n' | sed 's|, $||' | sed 's|.*|[&]|')"
-          echo "matrix=${distros_json}" >> "${GITHUB_OUTPUT}"
+
+          printf '%s\n' "${allowed_distros[@]}" | sed 's|.*|"&", |' | tr -d '\n' | sed 's|, $||' | sed 's|.*|matrix=[&]|' > "${GITHUB_OUTPUT}"
   update-pkg:
     runs-on: ubuntu-latest
     needs: get-distro-image-matrix
     container:
       image: proget.hunterwittenborn.com/docker/makedeb/makedeb:${{ matrix.distro-image }}
+      options: --user root
     strategy:
       fail-fast: false
       matrix:
