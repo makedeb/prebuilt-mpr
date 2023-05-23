@@ -19,7 +19,7 @@ jobs:
           url: https://vault.hunterwittenborn.com
           token: ${{ secrets.VAULT_TOKEN }}
           secrets: |
-            kv/data/ci github_api_key | GITHUB_TOKEN
+            kv/data/ci github_api_key | GITHUB_TOKEN ;
             kv/data/ci proget_key | PROGET_TOKEN
       - name: Install needed dependencies
         run: sudo apt-get install libapt-pkg-dev -y
@@ -29,6 +29,8 @@ jobs:
         run: chmod +x ./pbmpr
       - name: Upload packages to Prebuilt-MPR
         run: ./pbmpr upload-debs "${{ github.event.pull_request.number }}"
-      - name: Report build status
+      - name: Report succeeded build status
+        run: gh pr comment "${{ github.event.pull_request.number }}" --body 'Package publishing has succeeded! :tada:'
+      - name: Report failed build status
         if: failure()
         run: gh pr comment "${{ github.event.pull_request.number }}" --body '**Package publishing has failed @makedeb/prebuilt-mpr-reviewers!** Please look over the [Checks tab](/${{ github.repository }}/pull/${{ github.event.pull_request.number }}/checks) to see what went wrong.'

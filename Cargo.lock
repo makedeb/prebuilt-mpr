@@ -1396,9 +1396,9 @@ dependencies = [
 
 [[package]]
 name = "proget"
-version = "0.1.3"
+version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f735c63474198d1c1d8e36a87928c32d2b527275b8258603db8bf25ff59b700a"
+checksum = "68743ae314bdcdd4bb99ff0f8c06c7cf1b36e9803b69607e68507609ce58868e"
 dependencies = [
  "base64 0.13.1",
  "reqwest",
