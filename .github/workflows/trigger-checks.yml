@@ -6,7 +6,8 @@ on:
 #    - cron: '*/10 * * * *'
 
 jobs:
-  run-checks:
+  trigger-checks:
+    name: Trigger Checks
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository

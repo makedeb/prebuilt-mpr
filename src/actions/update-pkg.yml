@@ -5,11 +5,16 @@ on:
 
 jobs:
   get-distro-image-matrix:
+    name: Get Distro List
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-      - name: Set up makedeb and Prebuilt-MPR APT repositories
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          ref: main
+      - name: Set up Prebuilt-MPR APT repository
         uses: makedeb/setup-makedeb@main
         with:
           makedeb-repo: false
@@ -40,6 +45,7 @@ jobs:
 
           printf '%s\n' "${allowed_distros[@]}" | sed 's|.*|"&", |' | tr -d '\n' | sed 's|, $||' | sed 's|.*|matrix=[&]|' > "${GITHUB_OUTPUT}"
   update-pkg:
+    name: Build Package
     runs-on: ubuntu-latest
     needs: get-distro-image-matrix
     container:
