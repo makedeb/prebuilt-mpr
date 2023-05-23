@@ -20,7 +20,7 @@ static PKG_UPDATE_ACTION: &[u8] = include_bytes!("actions/update-pkg.yml");
 static PKG_PUBLISH_ACTION: &[u8] = include_bytes!("actions/publish-pkg.yml");
 
 /// The CODEOWNERS file we use to review the proper people on package updates.
-statis PKG_CODEOWNERS: &[u8] = include_bytes!("actions/CODEOWNERS");
+static PKG_CODEOWNERS: &[u8] = include_bytes!("actions/CODEOWNERS");
 
 pub async fn check_pkg(gh_user: &str, gh_token: &str, pkg: &str) -> exitcode::ExitCode {
     let packages = match cache::get_mpr_packages().await {
@@ -313,7 +313,11 @@ fn check_actions_file(gh_repo: &Repository, gh_remote: &mut Remote, pkg_branch: 
         let mut index = gh_repo.index().unwrap();
         index
             .add_all(
-                [".github/workflows/update-pkg.yml", ".github/workflows/publish-pkg.yml", ".github/CODEOWNERS"],
+                [
+                    ".github/workflows/update-pkg.yml",
+                    ".github/workflows/publish-pkg.yml",
+                    ".github/CODEOWNERS",
+                ],
                 IndexAddOption::DEFAULT,
                 None,
             )

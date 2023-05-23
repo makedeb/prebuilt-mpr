@@ -29,4 +29,4 @@ jobs:
         run: ./pbmpr upload-debs "${{ github.event.pull_request.number }}"
       - name: Report build status
         if: failure()
-        run: gh pr comment "${{ github.event.pull_request.number }}" --body '**Package publishing has failed!** Please look over the [Checks tab](/${{ github.repository }}/pull/${{ github.event.pull_request.number }}/checks) to see what went wrong.'
+        run: gh pr comment "${{ github.event.pull_request.number }}" --body '**Package publishing has failed @makedeb/prebuilt-mpr-reviewers!** Please look over the [Checks tab](/${{ github.repository }}/pull/${{ github.event.pull_request.number }}/checks) to see what went wrong.'
