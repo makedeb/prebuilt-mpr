@@ -61,7 +61,7 @@ jobs:
       - name: Correct permissions so makedeb can run
         run: chown 'makedeb:makedeb' ./ -R
       - name: Run makedeb
-        run: cd pkg/ && sudo -u makedeb makedeb -si --no-confirm
+        run: sudo -u makedeb makedeb -si --no-confirm --pass-env
       - name: Upload build artifacts
         uses: actions/upload-artifact@v3
         with:

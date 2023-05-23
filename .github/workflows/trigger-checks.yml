@@ -11,15 +11,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-      - name: Setup makedeb
-        uses: makedeb/setup-makedeb@main
-        with:
-          makedeb-repo: false
-          pbmpr-repo: true
       - name: Install needed dependencies
-        run: |
-          sudo apt-get install just -y
-          just install-deps
+        run: sudo apt-get install libapt-pkg-dev -y
       - name: Download Prebuilt-MPR helper binary
         run: gh release download -p pbmpr
         env:

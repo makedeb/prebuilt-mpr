@@ -17,9 +17,7 @@ jobs:
           makedeb-repo: false
           pbmpr-repo: true
       - name: Install needed dependencies
-        run: |
-          sudo apt-get install just -y
-          just install-deps
+        run: sudo apt-get install rustup libapt-pkg-dev -y
       - name: Restore Rust cache
         uses: Swatinem/rust-cache@v2
       - name: Build binary
