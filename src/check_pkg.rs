@@ -4,8 +4,18 @@ use crate::{
 };
 use git2::{BranchType, IndexAddOption, ObjectType, Repository, Signature};
 use rust_apt::{cache::Cache, util as apt_util};
-use std::{cmp::Ordering, env, fs, path::Path};
+use std::{
+    cmp::Ordering,
+    env,
+    fs::{self, File},
+    io::prelude::*,
+    path::Path,
+};
 use walkdir::WalkDir;
+
+/// The GitHub Actions package updater workflow file. See the code usages in
+/// this file for more info.
+static PKG_ACTIONS_FILE: &[u8] = include_bytes!("actions/update-pkg.yml");
 
 pub async fn check_pkg(gh_user: &str, gh_token: &str, pkg: &str) -> exitcode::ExitCode {
     let packages = match cache::get_mpr_packages().await {
@@ -26,8 +36,9 @@ pub async fn check_pkg(gh_user: &str, gh_token: &str, pkg: &str) -> exitcode::Ex
     let cache = Cache::new::<&str>(&[]).unwrap();
     let apt_pkg = cache.get(pkg);
 
-    // If the Prebuilt-MPR version is less than that on the MPR (or the Prebuilt-MPR package just
-    // doesn't exist yet), than the Prebuilt-MPR package needs to be updated to match that on the MPR.
+    // If the Prebuilt-MPR version is less than that on the MPR (or the Prebuilt-MPR
+    // package just doesn't exist yet), than the Prebuilt-MPR package needs to
+    // be updated to match that on the MPR.
     if apt_pkg.is_some()
         && apt_util::cmp_versions(
             apt_pkg.unwrap().candidate().unwrap().version(),
@@ -44,6 +55,7 @@ pub async fn check_pkg(gh_user: &str, gh_token: &str, pkg: &str) -> exitcode::Ex
 }
 
 async fn update_pkg(gh_user: &str, gh_token: &str, pkg: &MprPackage) {
+    // Stuff we need throughout this function.
     let mpr_repo_url = format!("https://{}/{}", util::MPR_URL, pkg.pkgbase);
     let gh_repo_url = format!(
         "https://{gh_user}:{gh_token}@github.com/{}/{}",
@@ -52,6 +64,21 @@ async fn update_pkg(gh_user: &str, gh_token: &str, pkg: &MprPackage) {
     );
     let gh_pkg_branch = format!("pkg/{}", pkg.pkgbase);
     let gh_pkg_update_branch = format!("pkg-update/{}", pkg.pkgbase);
+
+    // Set up the octocrab instance.
+    let crab = octocrab::instance();
+    let pulls = crab.pulls(util::PBMPR_GITHUB_ORG, util::PBMPR_GITHUB_REPO);
+
+    let active_pulls = async || {
+        pulls
+            .list()
+            .head(&gh_pkg_update_branch)
+            .base(&gh_pkg_branch)
+            .send()
+            .await
+            .unwrap()
+            .items
+    };
 
     // Clone the GitHub and MPR repos.
     log::info!("Cloning '{mpr_repo_url}' into 'mpr-repo/'...");
@@ -70,7 +97,8 @@ async fn update_pkg(gh_user: &str, gh_token: &str, pkg: &MprPackage) {
     // Create and push the needed branches if they don't exist yet.
     log::info!("Ensuring Git branches are in a good state...");
 
-    // Create and push the 'pkg/{pkg}' and 'pkg-update/{pkg}' branches if they don't exist.
+    // Create and push the 'pkg/{pkg}' and 'pkg-update/{pkg}' branches if they don't
+    // exist.
     for branch in [&gh_pkg_branch, &gh_pkg_update_branch] {
         if remote_gh_branches.contains(&gh_pkg_branch) {
             continue;
@@ -78,6 +106,7 @@ async fn update_pkg(gh_user: &str, gh_token: &str, pkg: &MprPackage) {
 
         let tree = {
             let mut index = gh_repo.index().unwrap();
+            index.clear().unwrap();
             let tree_id = index.write_tree().unwrap();
             gh_repo.find_tree(tree_id).unwrap()
         };
@@ -89,7 +118,8 @@ async fn update_pkg(gh_user: &str, gh_token: &str, pkg: &MprPackage) {
                 .commit(None, &signature, &signature, "Initial commit", &tree, &[])
                 .unwrap();
             gh_repo.find_commit(commit_id).unwrap()
-        // Otherwise we're creating the 'pkg-update/{pkg}' branch, and need to make the first commit the same as the one from 'pkg/{pkg}'.
+        // Otherwise we're creating the 'pkg-update/{pkg}' branch, and need to
+        // make the first commit the same as the one from 'pkg/{pkg}'.
         } else {
             gh_repo
                 .find_branch(&gh_pkg_branch, BranchType::Local)
@@ -110,8 +140,8 @@ async fn update_pkg(gh_user: &str, gh_token: &str, pkg: &MprPackage) {
     }
 
     // Make sure that we've got all needed branches created locally ('pkg/{pkg}' and
-    // 'pkg-update/{pkg}'). If they don't exist (when the remote branches above did exist), create
-    // them and point them to the right commits on the remote.
+    // 'pkg-update/{pkg}'). If they don't exist (when the remote branches above did
+    // exist), create them and point them to the right commits on the remote.
     let local_gh_branches = util::get_branch_names(&gh_repo, BranchType::Local);
 
     for branch_name in [&gh_pkg_branch, &gh_pkg_update_branch] {
@@ -130,6 +160,109 @@ async fn update_pkg(gh_user: &str, gh_token: &str, pkg: &MprPackage) {
         branch.set_upstream(Some(&remote_branch)).unwrap();
     }
 
+    // Make sure that the GitHub Actions file is created and up to date on the
+    // package branches.
+    for branch_name in [&gh_pkg_branch, &gh_pkg_update_branch] {
+        let gh_branch = gh_repo
+            .resolve_reference_from_short_name(branch_name)
+            .unwrap();
+        gh_repo
+            .checkout_tree(&gh_branch.peel(ObjectType::Any).unwrap(), None)
+            .unwrap();
+        gh_repo.set_head(gh_branch.name().unwrap()).unwrap();
+
+        fs::create_dir_all("gh-repo/.github/workflows").unwrap();
+        File::create("gh-repo/.github/workflows/update-pkg.yml")
+            .unwrap()
+            .write_all(PKG_ACTIONS_FILE)
+            .unwrap();
+
+        if !gh_repo.statuses(None).unwrap().is_empty() {
+            log::info!(
+                "Updating GitHub Actions package updater workflow on '{branch_name}' branch..."
+            );
+
+            // Stage the files.
+            let mut gh_index = gh_repo.index().unwrap();
+            gh_index
+                .add_all(
+                    [".github/workflows/update-pkg.yml"],
+                    IndexAddOption::DEFAULT,
+                    None,
+                )
+                .unwrap();
+            gh_index.write().unwrap();
+
+            // Make the commit.
+            let gh_tree = {
+                let tree_id = gh_index.write_tree().unwrap();
+                gh_repo.find_tree(tree_id).unwrap()
+            };
+            let prev_commit = {
+                let commit_id = gh_repo.refname_to_id("HEAD").unwrap();
+                gh_repo.find_commit(commit_id).unwrap()
+            };
+            let signature = Signature::now(util::GIT_NAME, util::GIT_EMAIL).unwrap();
+            gh_repo
+                .commit(
+                    Some("HEAD"),
+                    &signature,
+                    &signature,
+                    "Update GitHub Actions package updater workflow [ci skip]",
+                    &gh_tree,
+                    &[&prev_commit],
+                )
+                .unwrap();
+
+            // If this is the package update branch, also merge the main branch into this
+            // one so that the Actions workflow file doesn't show in the review
+            // tab on the PR page. If we didn't do this the package reviewer
+            // would have to look at the new workflow file, which may make them
+            // think the need to review it for malicious code (which they don't
+            // since this program generates that file).
+            if branch_name == &gh_pkg_update_branch {
+                let pkg_branch_commit_id = gh_repo
+                    .find_branch(&gh_pkg_branch, BranchType::Local)
+                    .unwrap()
+                    .into_reference()
+                    .peel_to_commit()
+                    .unwrap()
+                    .id();
+                let pkg_branch_commit =
+                    gh_repo.find_annotated_commit(pkg_branch_commit_id).unwrap();
+                gh_repo.merge(&[&pkg_branch_commit], None, None).unwrap();
+                let prev_commit = {
+                    let commit_id = gh_repo.refname_to_id("HEAD").unwrap();
+                    gh_repo.find_commit(commit_id).unwrap()
+                };
+
+                let tree = {
+                    let tree_id = gh_repo.index().unwrap().write_tree().unwrap();
+                    gh_repo.find_tree(tree_id).unwrap()
+                };
+                gh_repo
+                    .commit(
+                        Some("HEAD"),
+                        &signature,
+                        &signature,
+                        &format!("Merge branch '{gh_pkg_branch}' into {gh_pkg_update_branch}"),
+                        &tree,
+                        &[&prev_commit],
+                    )
+                    .unwrap();
+            }
+
+            // Push the commit(s).
+            let branch_ref = gh_repo
+                .resolve_reference_from_short_name(branch_name)
+                .unwrap()
+                .name()
+                .unwrap()
+                .to_owned();
+            gh_remote.push(&[&branch_ref], None).unwrap();
+        }
+    }
+
     // Checkout the GitHub repository to the correct branch.
     let gh_branch = gh_repo
         .resolve_reference_from_short_name(&gh_pkg_update_branch)
@@ -141,7 +274,8 @@ async fn update_pkg(gh_user: &str, gh_token: &str, pkg: &MprPackage) {
 
     // Checkout the MPR repository to the correct tag.
     //
-    // Git Tags on the MPR have epochs (:) replaced with exclamation marks (!), so do that here.
+    // Git Tags on the MPR have epochs (:) replaced with exclamation marks (!), so
+    // do that here.
     let mpr_tag_string = format!("ver/{}", pkg.version.replace(':', "!"));
     let mpr_tag = mpr_repo
         .resolve_reference_from_short_name(&mpr_tag_string)
@@ -151,13 +285,15 @@ async fn update_pkg(gh_user: &str, gh_token: &str, pkg: &MprPackage) {
         .unwrap();
     mpr_repo.set_head(mpr_tag.name().unwrap()).unwrap();
 
-    // Delete the 'pkg/' directory in the GitHub branch if it exists, and then make sure it exists.
+    // Delete the 'pkg/' directory in the GitHub branch if it exists, and then make
+    // sure it exists.
     if Path::new("gh-repo/pkg").exists() {
         fs::remove_dir_all("gh-repo/pkg").unwrap();
     }
     fs::create_dir("gh-repo/pkg").unwrap();
 
-    // Copy over the files from the MPR repository into the GitHub branch's 'pkg/' folder.
+    // Copy over the files from the MPR repository into the GitHub branch's 'pkg/'
+    // folder.
     log::info!("Setting up package's GitHub branch with files from the MPR repository...");
     for maybe_file in fs::read_dir("mpr-repo/").unwrap() {
         let file = maybe_file.unwrap();
@@ -210,7 +346,8 @@ async fn update_pkg(gh_user: &str, gh_token: &str, pkg: &MprPackage) {
         .unwrap();
     gh_index.write().unwrap();
 
-    // Commit and push the new files into the the GitHub branch, if anything was changed.
+    // Commit and push the new files into the the GitHub branch, if anything was
+    // changed.
     if gh_repo.statuses(None).unwrap().is_empty() {
         log::info!("GitHub repo already has changes on remote. Skipping pushing of changes.");
     } else {
@@ -243,18 +380,7 @@ async fn update_pkg(gh_user: &str, gh_token: &str, pkg: &MprPackage) {
     }
 
     // Set up the PR to merge in the changes, if no existing PR is open.
-    let crab = octocrab::instance();
-    let pulls = crab.pulls(util::PBMPR_GITHUB_ORG, util::PBMPR_GITHUB_REPO);
-
-    let active_pulls = pulls
-        .list()
-        .head(&gh_pkg_update_branch)
-        .base(&gh_pkg_branch)
-        .send()
-        .await
-        .unwrap();
-
-    if !active_pulls.items.is_empty() {
+    if !active_pulls().await.is_empty() {
         log::info!("PR already exists, skipping PR creation.");
     } else {
         log::info!("Creating PR...");

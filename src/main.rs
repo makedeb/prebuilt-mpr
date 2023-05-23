@@ -1,3 +1,5 @@
+#![feature(async_closure)]
+
 use clap::{Parser, Subcommand};
 use log::LevelFilter;
 use octocrab::Octocrab;
@@ -22,7 +24,8 @@ struct Cli {
 enum Command {
     /// Trigger GitHub Actions runs to check all packages for updates.
     RunChecks,
-    /// Check if a package in the Prebuilt-MPR is out of date, creating a PR on GitHub if it is
+    /// Check if a package in the Prebuilt-MPR is out of date, creating a PR on
+    /// GitHub if it is
     CheckPkg {
         /// The username of a GitHub account.
         #[arg(long = "github-username", env = "GITHUB_USERNAME")]

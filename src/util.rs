@@ -17,8 +17,9 @@ pub static GIT_NAME: &str = "Kavplex Bot";
 /// Our Git email.
 pub static GIT_EMAIL: &str = "kavplex@hunterwittenborn.com";
 
-/// A [`reqwest::Client`] that can be used across this crate. This global is used in case any
-/// future requirements make it to where all requests need to have certain options applied to them.
+/// A [`reqwest::Client`] that can be used across this crate. This global is
+/// used in case any future requirements make it to where all requests need to
+/// have certain options applied to them.
 pub static CLIENT: Lazy<Client> = Lazy::new(Client::new);
 
 /// Get our Git signature.
