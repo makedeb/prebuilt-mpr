@@ -1,23 +1,20 @@
 # Check if a Prebuilt-MPR package needs updated.
-name: check-pkg
-run-name: check-pkg-${{ inputs.pkgbase }}
+name: Check Package
+run-name: Check Package: '${{ inputs.pkgbase }}'
 on:
   workflow_dispatch:
     inputs:
       pkgbase:
         required: true
         type: string
-permissions:
-  id-token: write
-  contents: read
 
 jobs:
   check-pkg:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v3
-      - name: Import Vault Secrets
+      - name: Import Vault secrets
         uses: hashicorp/vault-action@v2
         with:
           url: https://vault.hunterwittenborn.com
@@ -29,15 +26,15 @@ jobs:
         with:
           makedeb-repo: false
           pbmpr-repo: true
-      - name: Install Needed Dependencies
+      - name: Install needed dependencies
         run: |
           sudo apt-get install just -y
           just install-deps
-      - name: Download Prebuilt-MPR Helper Binary
+      - name: Download Prebuilt-MPR helper binary
         run: gh release download -p pbmpr
-      - name: Make Prebuilt-MPR Helper Binary Executable
+      - name: Make Prebuilt-MPR helper binary executable
         run: chmod +x ./pbmpr
-      - name: Run Update Checks for the Specified Package
+      - name: Run update checks for the specified package
         run: ./pbmpr check-pkg "${{ inputs.pkgbase }}"
         env:
           GITHUB_TOKEN: "${{ env.GH_TOKEN }}"

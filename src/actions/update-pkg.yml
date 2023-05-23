@@ -1,5 +1,5 @@
 # Update an MPR package.
-name: update-pkg
+name: Update Package
 on:
   pull_request:
 
@@ -9,16 +9,16 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-      - name: set up makedeb and Prebuilt-MPR APT repositories
+      - name: Set up makedeb and Prebuilt-MPR APT repositories
         uses: makedeb/setup-makedeb@main
         with:
           makedeb-repo: false
           pbmpr-repo: true
-      - name: update APT cache
+      - name: Update APT cache
         run: sudo apt update
-      - name: install prerequisites
+      - name: Install prerequisites
         run: sudo apt install dasel jq -y
-      - name: get package base
+      - name: Get package base
         id: pkgbase
         run: echo "pkgbase=${GITHUB_HEAD_REF}" | sed 's|pkg-update/||' >> "${GITHUB_OUTPUT}"
       - name: Convert Comma-Separated Distro String into Distro Array
@@ -50,18 +50,20 @@ jobs:
       matrix:
         distro-image: ${{ fromJson(needs.get-distro-image-matrix.outputs.matrix) }}
     steps:
-      - name: checkout repository
+      - name: Checkout repository
         uses: actions/checkout@v3
-      - name: set up makedeb and Prebuilt-MPR APT repositories
+      - name: Set up makedeb and Prebuilt-MPR APT repositories
         uses: makedeb/setup-makedeb@main
         with:
           pbmpr-repo: true
-      - name: correct permissions so makedeb can run
+      - name: Install git
+        run: sudo apt install git -y
+      - name: Correct permissions so makedeb can run
         run: chown 'makedeb:makedeb' pkg/ -R
-      - name: run makedeb
+      - name: Run makedeb
         run: cd pkg/ && sudo -u makedeb makedeb -si --no-confirm
-      - name: upload build artifacts
-        uses: actions/checkout@v3
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.distro_image }}
           path: '*.deb'

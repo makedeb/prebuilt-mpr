@@ -1,5 +1,5 @@
 # Build the Rust binary used in the Prebuilt-MPR system.
-name: build
+name: Build and Release Binary
 on:
   push:
     branches:
@@ -9,27 +9,22 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v3
       - name: Setup makedeb
         uses: makedeb/setup-makedeb@main
         with:
           makedeb-repo: false
           pbmpr-repo: true
-      - name: Install Needed Dependencies
+      - name: Install needed dependencies
         run: |
           sudo apt-get install just -y
           just install-deps
-      - name: Restore Rust Cache
+      - name: Restore Rust cache
         uses: Swatinem/rust-cache@v2
-      - name: Build Binary
+      - name: Build binary
         run: cargo build --release
-      - name: Get Version for Release
-        id: cargo-version
-        run: |
-          version="$(cargo metadata --no-deps --format-version=1  | jq -r '.packages[].version')"
-          echo "VERSION=${version}" >> "${GITHUB_OUTPUT}"
-      - name: Create Release
+      - name: Create release
         env:
           GH_TOKEN: "${{ github.token }}"
         run: |
