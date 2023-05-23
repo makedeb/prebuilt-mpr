@@ -61,9 +61,9 @@ jobs:
       - name: Correct permissions so makedeb can run
         run: chown 'makedeb:makedeb' ./ -R
       - name: Run makedeb
-        run: sudo -u makedeb makedeb -si --no-confirm --pass-env
+        run: sudo -u makedeb makedeb -s --no-confirm --pass-env
       - name: Upload build artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ matrix.distro_image }}
+          name: ${{ matrix.distro-image }}
           path: '*.deb'
