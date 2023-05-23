@@ -59,7 +59,7 @@ jobs:
       - name: Install git
         run: sudo apt install git -y
       - name: Correct permissions so makedeb can run
-        run: chown 'makedeb:makedeb' pkg/ -R
+        run: chown 'makedeb:makedeb' ./ -R
       - name: Run makedeb
         run: cd pkg/ && sudo -u makedeb makedeb -si --no-confirm
       - name: Upload build artifacts

@@ -197,8 +197,7 @@ async fn update_pkg(gh_user: &str, gh_token: &str, pkg: &MprPackage) {
         }
     }
 
-    // Copy over the files from the MPR repository into the GitHub branch's 'pkg/'
-    // folder.
+    // Copy over the files from the MPR repository into the GitHub branch's folder.
     log::info!("Setting up package's GitHub branch with files from the MPR repository...");
     for maybe_file in fs::read_dir("mpr-repo/").unwrap() {
         let file = maybe_file.unwrap();
