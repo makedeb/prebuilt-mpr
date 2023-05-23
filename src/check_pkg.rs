@@ -2,7 +2,7 @@ use crate::{
     cache::{self, MprPackage},
     util,
 };
-use git2::{BranchType, IndexAddOption, ObjectType, Repository, Signature};
+use git2::{BranchType, IndexAddOption, ObjectType, Remote, Repository, Signature};
 use rust_apt::{cache::Cache, util as apt_util};
 use std::{
     cmp::Ordering,
@@ -160,108 +160,7 @@ async fn update_pkg(gh_user: &str, gh_token: &str, pkg: &MprPackage) {
         branch.set_upstream(Some(&remote_branch)).unwrap();
     }
 
-    // Make sure that the GitHub Actions file is created and up to date on the
-    // package branches.
-    for branch_name in [&gh_pkg_branch, &gh_pkg_update_branch] {
-        let gh_branch = gh_repo
-            .resolve_reference_from_short_name(branch_name)
-            .unwrap();
-        gh_repo
-            .checkout_tree(&gh_branch.peel(ObjectType::Any).unwrap(), None)
-            .unwrap();
-        gh_repo.set_head(gh_branch.name().unwrap()).unwrap();
-
-        fs::create_dir_all("gh-repo/.github/workflows").unwrap();
-        File::create("gh-repo/.github/workflows/update-pkg.yml")
-            .unwrap()
-            .write_all(PKG_ACTIONS_FILE)
-            .unwrap();
-
-        if !gh_repo.statuses(None).unwrap().is_empty() {
-            log::info!(
-                "Updating GitHub Actions package updater workflow on '{branch_name}' branch..."
-            );
-
-            // Stage the files.
-            let mut gh_index = gh_repo.index().unwrap();
-            gh_index
-                .add_all(
-                    [".github/workflows/update-pkg.yml"],
-                    IndexAddOption::DEFAULT,
-                    None,
-                )
-                .unwrap();
-            gh_index.write().unwrap();
-
-            // Make the commit.
-            let gh_tree = {
-                let tree_id = gh_index.write_tree().unwrap();
-                gh_repo.find_tree(tree_id).unwrap()
-            };
-            let prev_commit = {
-                let commit_id = gh_repo.refname_to_id("HEAD").unwrap();
-                gh_repo.find_commit(commit_id).unwrap()
-            };
-            let signature = Signature::now(util::GIT_NAME, util::GIT_EMAIL).unwrap();
-            gh_repo
-                .commit(
-                    Some("HEAD"),
-                    &signature,
-                    &signature,
-                    "Update GitHub Actions package updater workflow [ci skip]",
-                    &gh_tree,
-                    &[&prev_commit],
-                )
-                .unwrap();
-
-            // If this is the package update branch, also merge the main branch into this
-            // one so that the Actions workflow file doesn't show in the review
-            // tab on the PR page. If we didn't do this the package reviewer
-            // would have to look at the new workflow file, which may make them
-            // think the need to review it for malicious code (which they don't
-            // since this program generates that file).
-            if branch_name == &gh_pkg_update_branch {
-                let pkg_branch_commit_id = gh_repo
-                    .find_branch(&gh_pkg_branch, BranchType::Local)
-                    .unwrap()
-                    .into_reference()
-                    .peel_to_commit()
-                    .unwrap()
-                    .id();
-                let pkg_branch_commit =
-                    gh_repo.find_annotated_commit(pkg_branch_commit_id).unwrap();
-                gh_repo.merge(&[&pkg_branch_commit], None, None).unwrap();
-                let prev_commit = {
-                    let commit_id = gh_repo.refname_to_id("HEAD").unwrap();
-                    gh_repo.find_commit(commit_id).unwrap()
-                };
-
-                let tree = {
-                    let tree_id = gh_repo.index().unwrap().write_tree().unwrap();
-                    gh_repo.find_tree(tree_id).unwrap()
-                };
-                gh_repo
-                    .commit(
-                        Some("HEAD"),
-                        &signature,
-                        &signature,
-                        &format!("Merge branch '{gh_pkg_branch}' into {gh_pkg_update_branch}"),
-                        &tree,
-                        &[&prev_commit],
-                    )
-                    .unwrap();
-            }
-
-            // Push the commit(s).
-            let branch_ref = gh_repo
-                .resolve_reference_from_short_name(branch_name)
-                .unwrap()
-                .name()
-                .unwrap()
-                .to_owned();
-            gh_remote.push(&[&branch_ref], None).unwrap();
-        }
-    }
+    check_actions_file(&gh_repo, &mut gh_remote, &gh_pkg_branch);
 
     // Checkout the GitHub repository to the correct branch.
     let gh_branch = gh_repo
@@ -394,5 +293,62 @@ async fn update_pkg(gh_user: &str, gh_token: &str, pkg: &MprPackage) {
             .send()
             .await
             .unwrap();
+    }
+}
+
+/// Make sure that the GitHub Actions file is created and up to date on the
+/// package branch.
+fn check_actions_file(gh_repo: &Repository, gh_remote: &mut Remote, pkg_branch: &str) {
+    let gh_branch = gh_repo
+        .resolve_reference_from_short_name(pkg_branch)
+        .unwrap();
+    gh_repo
+        .checkout_tree(&gh_branch.peel(ObjectType::Any).unwrap(), None)
+        .unwrap();
+    gh_repo.set_head(gh_branch.name().unwrap()).unwrap();
+
+    fs::create_dir_all("gh-repo/.github/workflows").unwrap();
+    File::create("gh-repo/.github/workflows/update-pkg.yml")
+        .unwrap()
+        .write_all(PKG_ACTIONS_FILE)
+        .unwrap();
+
+    if !gh_repo.statuses(None).unwrap().is_empty() {
+        log::info!(
+            "Updating GitHub Actions workflow for package updates on '{pkg_branch}' branch..."
+        );
+
+        // Stage the file.
+        let mut index = gh_repo.index().unwrap();
+        index
+            .add_all(
+                [".github/workflows/update-pkg.yml"],
+                IndexAddOption::DEFAULT,
+                None,
+            )
+            .unwrap();
+        index.write().unwrap();
+
+        // Make the commit.
+        let tree = {
+            let tree_id = index.write_tree().unwrap();
+            gh_repo.find_tree(tree_id).unwrap()
+        };
+        let prev_commit = {
+            let commit_id = gh_repo.refname_to_id("HEAD").unwrap();
+            gh_repo.find_commit(commit_id).unwrap()
+        };
+        let signature = Signature::now(util::GIT_NAME, util::GIT_EMAIL).unwrap();
+        gh_repo
+            .commit(
+                Some("HEAD"),
+                &signature,
+                &signature,
+                "Update GitHub Actions workflow for package updates [ci skip]",
+                &tree,
+                &[&prev_commit],
+            )
+            .unwrap();
+        gh_remote.push(&[gh_branch.name().unwrap()], None).unwrap();
     }
 }
