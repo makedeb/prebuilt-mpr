@@ -6,12 +6,10 @@ use git2::{BranchType, IndexAddOption, ObjectType, Remote, Repository, Signature
 use rust_apt::{cache::Cache, util as apt_util};
 use std::{
     cmp::Ordering,
-    env,
     fs::{self, File},
     io::prelude::*,
     path::Path,
 };
-use walkdir::WalkDir;
 
 /// The GitHub Actions package updater workflow file. See the code usages in
 /// this file for more info.
@@ -184,12 +182,20 @@ async fn update_pkg(gh_user: &str, gh_token: &str, pkg: &MprPackage) {
         .unwrap();
     mpr_repo.set_head(mpr_tag.name().unwrap()).unwrap();
 
-    // Delete the 'pkg/' directory in the GitHub branch if it exists, and then make
-    // sure it exists.
-    if Path::new("gh-repo/pkg").exists() {
-        fs::remove_dir_all("gh-repo/pkg").unwrap();
+    // Delete all files from this branch.
+    for maybe_file in fs::read_dir("gh-repo/").unwrap() {
+        let file = maybe_file.unwrap();
+        let file_type = file.file_type().unwrap();
+        let file_path = file.path();
+
+        if file_path.file_name().unwrap() == Path::new(".git") {
+            continue;
+        } else if file_type.is_dir() {
+            fs::remove_dir_all(file_path).unwrap();
+        } else {
+            fs::remove_file(file_path).unwrap();
+        }
     }
-    fs::create_dir("gh-repo/pkg").unwrap();
 
     // Copy over the files from the MPR repository into the GitHub branch's 'pkg/'
     // folder.
@@ -198,50 +204,21 @@ async fn update_pkg(gh_user: &str, gh_token: &str, pkg: &MprPackage) {
         let file = maybe_file.unwrap();
         let file_name = file.file_name().into_string().unwrap();
 
-        if ![".git", ".SRCINFO"].contains(&file_name.as_str()) {
-            fs::copy(
-                file.path(),
-                format!("gh-repo/pkg/{}", file.file_name().into_string().unwrap()),
-            )
-            .unwrap();
+        if [".git", ".github", ".SRCINFO"].contains(&file_name.as_str()) {
+            continue;
         }
+
+        fs::copy(
+            file.path(),
+            format!("gh-repo/{}", file.file_name().into_string().unwrap()),
+        )
+        .unwrap();
     }
 
     // Add the new files into the GitHub branch.
-    env::set_current_dir("gh-repo/").unwrap();
-    let files: Vec<String> = WalkDir::new("./")
-        .into_iter()
-        .map(|item| item.unwrap().into_path())
-        .filter(|path| {
-            path.is_file()
-                && !path
-                    .canonicalize()
-                    .unwrap()
-                    .into_os_string()
-                    .into_string()
-                    .unwrap()
-                    .contains("/.git/")
-        })
-        .map(|path| {
-            let path_string = path
-                .canonicalize()
-                .unwrap()
-                .into_os_string()
-                .into_string()
-                .unwrap();
-            let cwd = env::current_dir()
-                .unwrap()
-                .into_os_string()
-                .into_string()
-                .unwrap()
-                + "/";
-            path_string.strip_prefix(&cwd).unwrap().to_owned()
-        })
-        .collect();
-
     let mut gh_index = gh_repo.index().unwrap();
     gh_index
-        .add_all(&files, IndexAddOption::DEFAULT, None)
+        .add_all(["*", ".*"], IndexAddOption::DEFAULT, None)
         .unwrap();
     gh_index.write().unwrap();
 
