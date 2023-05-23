@@ -1,8 +1,9 @@
 # Trigger Workflow Runs for Prebuilt-MPR Update Checks.
 name: Trigger Checks
 on:
-  schedule:
-    - cron: '*/10 * * * *'
+  workflow_dispath:
+#  schedule:
+#    - cron: '*/10 * * * *'
 
 jobs:
   run-checks:
