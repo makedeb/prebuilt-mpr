@@ -104,7 +104,7 @@ pub async fn upload_debs(pr_num: u64, proget_token: &str) -> exitcode::ExitCode 
             deb.distro
         );
         pg.upload_deb(
-            "testing-feed",
+            "prebuilt-mpr",
             &deb.distro,
             &deb.file_name,
             &deb.file_content,
