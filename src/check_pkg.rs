@@ -107,8 +107,8 @@ async fn update_pkg(gh_user: &str, gh_token: &str, pkg: &MprPackage) {
     for branch_name in [&gh_pkg_branch, &gh_pkg_update_branch] {
         let remote_branch = format!("origin/{branch_name}");
 
-        // If the branch existed on the remote, configure the local branch to point to the remote
-        // branch.
+        // If the branch existed on the remote, configure the local branch to point to
+        // the remote branch.
         if remote_gh_branches.contains(branch_name) {
             let commit = gh_repo
                 .find_branch(&remote_branch, BranchType::Remote)
@@ -120,7 +120,7 @@ async fn update_pkg(gh_user: &str, gh_token: &str, pkg: &MprPackage) {
             branch.set_upstream(Some(&remote_branch)).unwrap();
             continue;
         }
-        
+
         // Otherwise create the branch.
         let tree = {
             let mut index = gh_repo.index().unwrap();
@@ -208,11 +208,7 @@ async fn update_pkg(gh_user: &str, gh_token: &str, pkg: &MprPackage) {
             continue;
         }
 
-        fs::copy(
-            file.path(),
-            format!("gh-repo/{}", file_name),
-        )
-        .unwrap();
+        fs::copy(file.path(), format!("gh-repo/{}", file_name)).unwrap();
         file_list.push(file_name);
     }
 
@@ -223,9 +219,20 @@ async fn update_pkg(gh_user: &str, gh_token: &str, pkg: &MprPackage) {
         .unwrap();
     gh_index.write().unwrap();
 
+    // The number of changes, minus any changes to the '.github/' directory. For
+    // some reason Git likes to register the lack of the '.github/' as a
+    // deletion from that directory sometimes, but we don't want to include
+    // those files as part of the changes.
+    let status_count = gh_repo
+        .statuses(None)
+        .unwrap()
+        .into_iter()
+        .filter(|status| !status.path().unwrap().starts_with(".github"))
+        .count();
+
     // Commit and push the new files into the the GitHub branch, if anything was
     // changed.
-    if gh_repo.statuses(None).unwrap().is_empty() {
+    if status_count == 0 {
         log::info!("GitHub repo already has changes on remote. Skipping pushing of changes.");
     } else {
         let signature = Signature::now(util::GIT_NAME, util::GIT_EMAIL).unwrap();
