@@ -74,6 +74,8 @@ jobs:
         run: chown 'makedeb:makedeb' ./ -R
       - name: Run makedeb
         run: sudo -u makedeb makedeb -s --no-confirm --pass-env
+        env:
+          LANG: "en_US.UTF-8"
       - name: Upload build artifacts
         uses: actions/upload-artifact@v3
         with:
