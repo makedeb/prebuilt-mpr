@@ -1,0 +1,31 @@
+# Build the Rust binary used in the Prebuilt-MPR system.
+name: Build and Release Binary
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build and Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Setup Prebuilt-MPR APT repository
+        uses: makedeb/setup-makedeb@main
+        with:
+          makedeb-repo: false
+          pbmpr-repo: true
+      - name: Install needed dependencies
+        run: sudo apt-get install libapt-pkg-dev -y
+      - name: Restore Rust cache
+        uses: Swatinem/rust-cache@v2
+      - name: Build binary
+        run: cargo build --release
+      - name: Create release
+        env:
+          GH_TOKEN: "${{ github.token }}"
+        run: |
+          gh release edit latest --target main
+          gh release upload latest --clobber target/release/pbmpr

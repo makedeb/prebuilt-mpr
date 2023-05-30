@@ -1,0 +1,25 @@
+# Trigger Workflow Runs for Prebuilt-MPR Update Checks.
+name: Trigger Checks
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+
+jobs:
+  trigger-checks:
+    name: Trigger Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Install needed dependencies
+        run: sudo apt-get install libapt-pkg-dev -y
+      - name: Download Prebuilt-MPR helper binary
+        run: gh release download -p pbmpr
+        env:
+          GH_TOKEN: "${{ github.token }}"
+      - name: Make Prebuilt-MPR helper binary executable
+        run: chmod +x ./pbmpr
+      - name: Trigger workflow runs for update checks
+        run: ./pbmpr run-checks
+        env:
+          GITHUB_TOKEN: "${{ github.token }}"
