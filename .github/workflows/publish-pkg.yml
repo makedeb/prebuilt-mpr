@@ -22,13 +22,13 @@ jobs:
       - name: Install needed dependencies
         run: sudo apt-get install libapt-pkg-dev -y
       - name: Download Prebuilt-MPR helper binary
-        run: gh release download -p pbmpr
+        run: gh release download -p pbmpr -R "${{ github.repository }}"
       - name: Make Prebuilt-MPR helper binary executable
         run: chmod +x ./pbmpr
       - name: Upload packages to Prebuilt-MPR
         run: ./pbmpr upload-debs "${{ github.event.pull_request.number }}"
       - name: Report succeeded build status
-        run: gh pr comment "${{ github.event.pull_request.number }}" --body 'Package publishing has succeeded! :tada:'
+        run: gh pr comment "${{ github.event.pull_request.number }}" --body 'Package publishing has succeeded! :tada:' -R "${{ github.repository }}"
       - name: Report failed build status
         if: failure()
-        run: gh pr comment "${{ github.event.pull_request.number }}" --body '**Package publishing has failed @makedeb/prebuilt-mpr-reviewers!** Please look over the [Checks tab](/${{ github.repository }}/pull/${{ github.event.pull_request.number }}/checks) to see what went wrong.'
+        run: gh pr comment "${{ github.event.pull_request.number }}" --body '**Package publishing has failed @makedeb/prebuilt-mpr-reviewers!** Please look over the [Checks tab](/${{ github.repository }}/pull/${{ github.event.pull_request.number }}/checks) to see what went wrong.' -R "${{ github.repository }}"
