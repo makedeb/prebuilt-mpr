@@ -7,6 +7,7 @@ extended = true
 tools = ["cargo", "rls", "clippy", "rustfmt", "analysis", "src", "rust-demangler"]
 sanitizers = false
 profiler = true
+vendor = false
 
 [install]
 prefix = "/usr"

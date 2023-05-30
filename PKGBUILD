@@ -1,6 +1,5 @@
 # Maintainer: Hunter Wittenborn <hunter@hunterwittenborn.com>
-
-# Contributor: : hiddeninthesand <hiddeninthesand at pm dot me>
+# Contributor: hiddeninthesand <hiddeninthesand at pm dot me>
 
 pkgbase=rustc
 pkgname=(
@@ -16,7 +15,7 @@ pkgname=(
     'rustfmt'
 )
 pkgver=1.69.0
-pkgrel=1
+pkgrel=2
 pkgdesc='The Rust programming language toolchain'
 arch=('any')
 makedepends=(
