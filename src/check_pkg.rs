@@ -199,6 +199,7 @@ async fn update_pkg(gh_user: &str, gh_token: &str, pkg: &MprPackage) {
 
     // Copy over the files from the MPR repository into the GitHub branch's folder.
     log::info!("Setting up package's GitHub branch with files from the MPR repository...");
+    let mut file_list = vec![];
     for maybe_file in fs::read_dir("mpr-repo/").unwrap() {
         let file = maybe_file.unwrap();
         let file_name = file.file_name().into_string().unwrap();
@@ -209,15 +210,16 @@ async fn update_pkg(gh_user: &str, gh_token: &str, pkg: &MprPackage) {
 
         fs::copy(
             file.path(),
-            format!("gh-repo/{}", file.file_name().into_string().unwrap()),
+            format!("gh-repo/{}", file_name),
         )
         .unwrap();
+        file_list.push(file_name);
     }
 
     // Add the new files into the GitHub branch.
     let mut gh_index = gh_repo.index().unwrap();
     gh_index
-        .add_all(["*", ".*"], IndexAddOption::DEFAULT, None)
+        .add_all(&file_list, IndexAddOption::DEFAULT, None)
         .unwrap();
     gh_index.write().unwrap();
 
