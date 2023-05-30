@@ -104,11 +104,24 @@ async fn update_pkg(gh_user: &str, gh_token: &str, pkg: &MprPackage) {
 
     // Create and push the 'pkg/{pkg}' and 'pkg-update/{pkg}' branches if they don't
     // exist.
-    for branch in [&gh_pkg_branch, &gh_pkg_update_branch] {
-        if remote_gh_branches.contains(&gh_pkg_branch) {
+    for branch_name in [&gh_pkg_branch, &gh_pkg_update_branch] {
+        let remote_branch = format!("origin/{branch_name}");
+
+        // If the branch existed on the remote, configure the local branch to point to the remote
+        // branch.
+        if remote_gh_branches.contains(branch_name) {
+            let commit = gh_repo
+                .find_branch(&remote_branch, BranchType::Remote)
+                .unwrap()
+                .into_reference()
+                .peel_to_commit()
+                .unwrap();
+            let mut branch = gh_repo.branch(branch_name, &commit, false).unwrap();
+            branch.set_upstream(Some(&remote_branch)).unwrap();
             continue;
         }
-
+        
+        // Otherwise create the branch.
         let tree = {
             let mut index = gh_repo.index().unwrap();
             index.clear().unwrap();
@@ -117,7 +130,7 @@ async fn update_pkg(gh_user: &str, gh_token: &str, pkg: &MprPackage) {
         };
 
         // If we're creating the 'pkg/{pkg}' branch, create a new commit.
-        let commit = if branch == &gh_pkg_branch {
+        let commit = if branch_name == &gh_pkg_branch {
             let signature = util::git_signature();
             let commit_id = gh_repo
                 .commit(None, &signature, &signature, "Initial commit", &tree, &[])
@@ -134,34 +147,14 @@ async fn update_pkg(gh_user: &str, gh_token: &str, pkg: &MprPackage) {
                 .unwrap()
         };
 
-        gh_repo.branch(branch, &commit, false).unwrap();
+        let mut branch = gh_repo.branch(branch_name, &commit, false).unwrap();
         let branch_ref = gh_repo
-            .resolve_reference_from_short_name(branch)
+            .resolve_reference_from_short_name(branch_name)
             .unwrap()
             .name()
             .unwrap()
             .to_owned();
         gh_remote.push(&[&branch_ref], None).unwrap();
-    }
-
-    // Make sure that we've got all needed branches created locally ('pkg/{pkg}' and
-    // 'pkg-update/{pkg}'). If they don't exist (when the remote branches above did
-    // exist), create them and point them to the right commits on the remote.
-    let local_gh_branches = util::get_branch_names(&gh_repo, BranchType::Local);
-
-    for branch_name in [&gh_pkg_branch, &gh_pkg_update_branch] {
-        if local_gh_branches.contains(branch_name) {
-            continue;
-        }
-
-        let remote_branch = format!("origin/{branch_name}");
-        let commit = gh_repo
-            .find_branch(&remote_branch, BranchType::Remote)
-            .unwrap()
-            .into_reference()
-            .peel_to_commit()
-            .unwrap();
-        let mut branch = gh_repo.branch(branch_name, &commit, false).unwrap();
         branch.set_upstream(Some(&remote_branch)).unwrap();
     }
 
