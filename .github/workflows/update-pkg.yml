@@ -71,7 +71,7 @@ jobs:
       - name: Install prerequisites
         run: sudo apt install git locales-all -y
       - name: Correct permissions so makedeb can run
-        run: chown 'makedeb:makedeb' ./ "${HOME}" -R
+        run: chown 'makedeb:makedeb' ./ -R
       - name: Run makedeb
         run: sudo -Eu makedeb makedeb -s --no-confirm --pass-env
         env:
