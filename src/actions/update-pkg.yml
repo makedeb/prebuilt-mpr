@@ -68,13 +68,14 @@ jobs:
         uses: makedeb/setup-makedeb@main
         with:
           pbmpr-repo: true
-      - name: Install Git
-        run: sudo apt install git -y
+      - name: Install prerequisites
+        run: sudo apt install git locales-all -y
       - name: Correct permissions so makedeb can run
         run: chown 'makedeb:makedeb' ./ -R
       - name: Run makedeb
         run: sudo -Eu makedeb makedeb -s --no-confirm --pass-env
         env:
+          # Needed to extract some tar archives.
           LANG: "en_US.UTF-8"
       - name: Upload build artifacts
         uses: actions/upload-artifact@v3
