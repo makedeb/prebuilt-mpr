@@ -263,22 +263,40 @@ async fn update_pkg(gh_user: &str, gh_token: &str, pkg: &MprPackage) {
         gh_remote.push(&[&gh_pkg_update_branch_ref], None).unwrap();
     }
 
-    // Set up the PR to merge in the changes, if no existing PR is open.
-    if !active_pulls().await.is_empty() {
+    // Set up the PR to merge in the changes, if no existing PR is open. Also make
+    // sure the PR title is correct (i.e. we updated the version after the PR
+    // was already open).
+    let pr_title = format!("Update `{}` to `{}`", pkg.pkgbase, pkg.version);
+    let current_pulls = active_pulls().await;
+
+    if !current_pulls.is_empty() {
         log::info!("PR already exists, skipping PR creation.");
-    } else {
-        log::info!("Creating PR...");
-        pulls
-            .create(
-                format!("Update `{}` to `{}`", pkg.pkgbase, pkg.version),
-                &gh_pkg_update_branch,
-                &gh_pkg_branch,
-            )
-            .maintainer_can_modify(true)
-            .send()
-            .await
-            .unwrap();
+
+        let current_pull = &current_pulls[0];
+
+        if current_pull.title.as_ref().unwrap() != &pr_title {
+            log::info!("PR has incorrect title. Updating title...");
+            pulls
+                .update(current_pull.number)
+                .title(pr_title)
+                .send()
+                .await
+                .unwrap();
+        }
+        return;
     }
+
+    log::info!("Creating PR...");
+    pulls
+        .create(
+            format!("Update `{}` to `{}`", pkg.pkgbase, pkg.version),
+            &gh_pkg_update_branch,
+            &gh_pkg_branch,
+        )
+        .maintainer_can_modify(true)
+        .send()
+        .await
+        .unwrap();
 }
 
 /// Make sure that the GitHub Actions file is created and up to date on the
