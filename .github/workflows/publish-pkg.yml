@@ -31,4 +31,4 @@ jobs:
         run: gh pr comment "${{ github.event.pull_request.number }}" --body 'Package publishing has succeeded! :tada:' -R "${{ github.repository }}"
       - name: Report failed build status
         if: failure()
-        run: gh pr comment "${{ github.event.pull_request.number }}" --body '**Package publishing has failed @makedeb/prebuilt-mpr-reviewers!** Please look over the [Checks tab](/${{ github.repository }}/pull/${{ github.event.pull_request.number }}/checks) to see what went wrong.' -R "${{ github.repository }}"
+        run: gh pr comment "${{ github.event.pull_request.number }}" --body '**Package publishing has failed @makedeb/prebuilt-mpr-developers!** Please look over the [Checks tab](/${{ github.repository }}/pull/${{ github.event.pull_request.number }}/checks) to see what went wrong.' -R "${{ github.repository }}"
