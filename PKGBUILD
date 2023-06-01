@@ -1,0 +1,45 @@
+# Maintainer: Hunter Wittenborn <hunter@hunterwittenborn.com>
+pkgname=celeste
+pkgver=0.5.2
+pkgrel=1
+pkgdesc='Sync your cloud files'
+arch=('any')
+depends=(
+    'libadwaita-1-0'
+    'libayatana-appindicator3-1'
+    'libgtk-3-0'
+    'rclone'
+)
+makedepends=(
+    'just'
+    'libadwaita-1-dev'
+    'libatk1.0-dev'
+    'libcairo2-dev'
+    'libclang-15-dev'
+    'libgdk-pixbuf-2.0-dev'
+    'libglib2.0-dev'
+    'libgraphene-1.0-dev'
+    'libgtk-3-dev'
+    'libgtk-4-dev'
+    'libpango1.0-dev'
+    'golang-go>=2:1.17'
+    'pkg-config'
+    'rustup'
+)
+license=('GPL-3.0')
+url='https://github.com/hwittenborn/celeste'
+
+source=("${url}/archive/refs/tags/v${pkgver}.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+    cd "${pkgname}-${pkgver}/"
+    just build
+}
+
+package() {
+    cd "${pkgname}-${pkgver}/"
+    DESTDIR="${pkgdir}" just install
+}
+
+# vim: set sw=4 expandtab:
