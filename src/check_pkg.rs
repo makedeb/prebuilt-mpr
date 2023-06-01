@@ -39,17 +39,19 @@ pub async fn check_pkg(gh_user: &str, gh_token: &str, pkg: &str) -> exitcode::Ex
     };
 
     let cache = Cache::new::<&str>(&[]).unwrap();
-    let apt_pkg = cache.get(pkg);
+    let maybe_apt_pkg = cache.get(pkg);
 
     // If the Prebuilt-MPR version is less than that on the MPR (or the Prebuilt-MPR
     // package just doesn't exist yet), than the Prebuilt-MPR package needs to
     // be updated to match that on the MPR.
-    if apt_pkg.is_some()
-        && apt_util::cmp_versions(
-            apt_pkg.unwrap().candidate().unwrap().version(),
-            &package.version,
-        ) == Ordering::Less
-    {
+    let needs_updated = if let Some(apt_pkg) = maybe_apt_pkg {
+        apt_util::cmp_versions(apt_pkg.candidate().unwrap().version(), &package.version)
+            == Ordering::Less
+    } else {
+        true
+    };
+
+    if needs_updated {
         log::info!("Updating '{pkg}'...");
         update_pkg(gh_user, gh_token, package).await;
     } else {
