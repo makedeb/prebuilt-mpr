@@ -1,25 +1,24 @@
 # Maintainer: Hunter Wittenborn <hunter@hunterwittenborn.com>
-_pkgname=proget-cli
 pkgname=pg
-pkgver=0.1.0
-pkgrel=2
+pkgver=0.1.1
+pkgrel=1
 pkgdesc='A CLI ProGet client'
 arch=('any')
 makedepends=('cargo')
 license=('GPL-3.0')
-url="https://github.com/hwittenborn/${_pkgname}"
+url='https://github.com/hwittenborn/proget-cli'
 
 source=("${url}/archive/refs/tags/v${pkgver}.tar.gz")
 sha256sums=('SKIP')
 
 build() {
-    cd "${_pkgname}-${pkgver}/"
+    cd "${pkgname}-${pkgver}/"
     cargo build --release
 }
 
 package() {
-    cd "${_pkgname}-${pkgver}/"
-    install -Dm 755 "target/release/${pkgname}" "${pkgdir}/usr/bin/${pkgname}"
+    cd "${pkgname}-${pkgver}/"
+    install -Dm 755 target/release/pg "${pkgdir}/usr/bin/pg"
 }
 
 # vim: set sw=4 expandtab:
