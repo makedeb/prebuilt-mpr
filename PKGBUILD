@@ -1,6 +1,5 @@
 # Maintainer: Hunter Wittenborn <hunter@hunterwittenborn.com>
 # Contributor: hiddeninthesand <hiddeninthesand at pm dot me>
-
 pkgbase=rustc
 pkgname=(
     'rustc'
@@ -15,7 +14,7 @@ pkgname=(
     'rustfmt'
 )
 pkgver=1.70.0
-pkgrel=1
+pkgrel=2
 pkgdesc='The Rust programming language toolchain'
 arch=('any')
 makedepends=(
@@ -43,7 +42,22 @@ sha256sums=(
 
 build() {
     cd "rustc-${pkgver}-src/"
-    python3 x.py --config "${srcdir}/config.toml" build -j "$(nproc)"
+    args=(
+        'python3'
+        'x.py'
+        '--config'
+        "${srcdir}/config.toml"
+        'build'
+        '-j'
+        "$(nproc)"
+    )
+
+    # If we're building in a CI environment, `x.py` requires us to start builds at stage 2.
+    if [[ "${TF_BUILD:+x}" == 'x' || "${GITHUB_ACTIONS:+x}" == 'x' ]]; then
+        args+=('--stage' '2')
+    fi
+
+    "${args[@]}"
 }
 
 package_rustc() {
