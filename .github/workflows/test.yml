@@ -9,6 +9,10 @@ jobs:
     steps:
       - name: Checkout Git repository
         uses: actions/checkout@v3
+      - name: Install needed dependencies
+        run: sudo apt-get update && sudo apt-get install libapt-pkg-dev -y
+      - name: Install rustfmt and clippy on nightly toolchain
+        run: rustup install nightly && rustup component add --toolchain nightly rustfmt clippy
       - name: Run formatting checks
         run: cargo fmt --check
       - name: Run Clippy checks
