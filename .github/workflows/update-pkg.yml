@@ -1,0 +1,84 @@
+# Update an MPR package.
+name: Update Package
+on:
+  pull_request:
+
+jobs:
+  get-distro-image-matrix:
+    name: Get Distro List
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          ref: main
+      - name: Set up Prebuilt-MPR APT repository
+        uses: makedeb/setup-makedeb@main
+        with:
+          makedeb-repo: false
+          pbmpr-repo: true
+      - name: Update APT cache
+        run: sudo apt update
+      - name: Install prerequisites
+        run: sudo apt install dasel jq -y
+      - name: Get package base
+        id: pkgbase
+        run: echo "pkgbase=${GITHUB_HEAD_REF}" | sed 's|pkg-update/||' >> "${GITHUB_OUTPUT}"
+      - name: Convert comma-separated distro string into distro array
+        id: set-matrix
+        run: |
+          allowed_distros=()
+          blocked_distros_str="$(dasel -f packages.toml -w json | jq -r '."${{ steps.pkgbase.outputs.pkgbase }}".blocked_distros')"
+
+          if [[ "${blocked_distros_str}" == 'null' ]]; then
+            blocked_distros=()
+          else
+            blocked_distros=($(echo "${blocked_distros_str}" | jq -r '.[]'))
+          fi
+
+          for distro in 'focal' 'jammy' 'bullseye'; do
+            if ! printf '%s\n' "${blocked_distros[@]}" | grep -Fq "${distro}"; then
+
+              if [[ "${distro}" == 'bullseye' ]]; then
+                allowed_distros+=("debian-${distro}")
+              else
+                allowed_distros+=("ubuntu-${distro}")
+              fi
+            fi
+          done
+
+          printf '%s\n' "${allowed_distros[@]}" | sed 's|.*|"&", |' | tr -d '\n' | sed 's|, $||' | sed 's|.*|matrix=[&]|' > "${GITHUB_OUTPUT}"
+  update-pkg:
+    name: Build Package
+    runs-on: ubuntu-latest
+    needs: get-distro-image-matrix
+    container:
+      image: proget.hunterwittenborn.com/docker/makedeb/makedeb:${{ matrix.distro-image }}
+      options: --user root
+    strategy:
+      fail-fast: false
+      matrix:
+        distro-image: ${{ fromJson(needs.get-distro-image-matrix.outputs.matrix) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Set up makedeb and Prebuilt-MPR APT repositories
+        uses: makedeb/setup-makedeb@main
+        with:
+          pbmpr-repo: true
+      - name: Install prerequisites
+        run: sudo apt install git locales-all -y
+      - name: Correct permissions so makedeb can run
+        run: chown 'makedeb:makedeb' ./ "${HOME}" -R
+      - name: Run makedeb
+        run: sudo -Eu makedeb makedeb -s --no-confirm --pass-env
+        env:
+          # Needed to extract some tar archives.
+          LANG: "en_US.UTF-8"
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.distro-image }}
+          path: '*.deb'
