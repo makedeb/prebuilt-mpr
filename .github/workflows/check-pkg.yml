@@ -15,13 +15,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-      - name: Import Vault secrets
-        uses: hashicorp/vault-action@v2
-        with:
-          url: https://vault.hunterwittenborn.com
-          token: ${{ secrets.VAULT_TOKEN }}
-          secrets: |
-            kv/data/ci github_api_key | GH_TOKEN
       - name: Setup Prebuilt-MPR APT repository
         uses: makedeb/setup-makedeb@main
         with:
@@ -31,6 +24,8 @@ jobs:
         run: sudo apt-get install libapt-pkg-dev -y
       - name: Download Prebuilt-MPR helper binary
         run: gh release download -p pbmpr
+        env:
+          GITHUB_TOKEN: "${{ secrets.GH_TOKEN }}"
       - name: Make Prebuilt-MPR helper binary executable
         run: chmod +x ./pbmpr
       - name: Run update checks for the specified package
