@@ -27,6 +27,8 @@ blocked_distros = ["focal", "bullseye"]
 
 [docker-compose]
 
+[doppler]
+
 [drone-cli]
 
 [drone-runner-exec]
