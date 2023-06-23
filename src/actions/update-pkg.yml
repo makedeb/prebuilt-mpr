@@ -72,6 +72,10 @@ jobs:
         run: sudo apt install git locales-all -y
       - name: Correct permissions so makedeb can run
         run: chown 'makedeb:makedeb' ./ "${HOME}" -R
+      # Workaround for https://github.com/makedeb/prebuilt-mpr/pull/147#issuecomment-1604226684.
+      - name: Install Prism Launcher prerequisites
+        run: sudo -E apt-get install ca-certificates-java -y
+        if: github.base_ref == 'pkg/prismlauncher'
       - name: Run makedeb
         run: sudo -Eu makedeb makedeb -s --no-confirm --pass-env
         env:
