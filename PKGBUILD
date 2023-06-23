@@ -1,6 +1,6 @@
 # Maintainer: Hunter Wittenborn <hunter@hunterwittenborn.com>
 pkgname=element-desktop-bin
-pkgver=1.11.31
+pkgver=1.11.34
 pkgrel=1
 pkgdesc="A feature-rich client for Matrix.org"
 arch=('amd64')
