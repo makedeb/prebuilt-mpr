@@ -31,5 +31,5 @@ jobs:
       - name: Run update checks for the specified package
         run: ./pbmpr check-pkg "${{ inputs.pkgbase }}"
         env:
-          GITHUB_TOKEN: "${{ env.GH_TOKEN }}"
+          GITHUB_TOKEN: "${{ secrets.GH_TOKEN }}"
           GITHUB_USERNAME: "kavplex"
