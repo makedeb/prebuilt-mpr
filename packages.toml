@@ -13,6 +13,8 @@ blocked_distros = ["focal", "bullseye"]
 
 [chezmoi]
 
+[cloudflared]
+
 [code-bin]
 
 [comb]
