@@ -1,5 +1,7 @@
 [airshipper]
 
+[appimagetool-bin]
+
 [appimage-builder]
 
 [bat]
@@ -7,6 +9,8 @@
 [bats]
 
 [bitwarden-bin]
+
+[cargo-appimage]
 
 [celeste]
 blocked_distros = ["focal", "bullseye"]
