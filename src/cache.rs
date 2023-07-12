@@ -18,11 +18,7 @@ pub async fn get_mpr_packages() -> anyhow::Result<Vec<MprPackage>> {
 
     let status = resp.status();
     anyhow::ensure!(status == StatusCode::OK, "Invalid response code ({status})");
+    let packages = String::from_utf8(resp.bytes().await.unwrap().to_vec()).unwrap();
 
-    let bytes = resp.bytes().await.unwrap();
-    let mut decoder = GzDecoder::new(bytes.as_ref());
-    let mut json_packages = String::new();
-    decoder.read_to_string(&mut json_packages).unwrap();
-
-    Ok(serde_json::from_str(&json_packages).unwrap())
+    Ok(serde_json::from_str(&packages).unwrap())
 }
