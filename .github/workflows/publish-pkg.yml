@@ -13,16 +13,17 @@ on:
 
 jobs:
   update-pkg:
-    name: Build Package (${{ matrix.codename }} - ${{ matrix.arch }})
+    name: Build Package (${{ matrix.target.codename }} - ${{ matrix.target.arch }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix: ${{ fromJson(inputs.targets) }}
+      matrix:
+        target: ${{ fromJson(inputs.targets) }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: Build package
-        run: echo "${SCRIPT}" | docker run -i proget.hunterwittenborn.com/docker/makedeb/makedeb:${{ matrix.image-tag }} bash
+        run: echo "${SCRIPT}" | docker run -i proget.hunterwittenborn.com/docker/makedeb/makedeb:${{ matrix.target.image-tag }} bash
         env:
           SCRIPT: |
             echo "HEEEEEY!"
