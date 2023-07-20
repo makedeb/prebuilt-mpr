@@ -15,7 +15,6 @@ jobs:
   update-pkg:
     name: Build Package (${{ matrix.codename }} - ${{ matrix.arch }})
     runs-on: ubuntu-latest
-    needs: get-distro-image-matrix
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(inputs.targets) }}
