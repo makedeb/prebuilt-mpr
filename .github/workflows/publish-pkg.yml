@@ -34,7 +34,7 @@ jobs:
             set -x
             sleep 5000
       - name: Set status notification
-        if: !success()
+        if: ${{ !success() }}
         run: |
           if [[ "${{ failure() }}" == 'true' ]]; then
             msg='Failed'
