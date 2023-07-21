@@ -33,8 +33,14 @@ jobs:
             proget.hunterwittenborn.com/docker/makedeb/makedeb:${{ matrix.target.image-tag }}
         env:
           SCRIPT: |
-            echo "=== LS"
-            ls
+            export "DEBIAN_FRONTEND=${{ vars.DEBIAN_FRONTEND }}"
+            sudo -E apt-get install git locales-all -y
+            export LANG='en_US.UTF-8'
+            makedeb -s --no-confirm --pass-env
+      - name: Upload built packages
+        uses: actions/upload-artifact@v3
+        with:
+          name: "${{ matrix.target.distro }}:${{ matrix.target.arch }}"
   set-status:
     name: Set Pending Status
     runs-on: ubuntu-latest
@@ -106,9 +112,9 @@ jobs:
       # - name: Run makedeb
       #   run: sudo -Eu makedeb makedeb -s --no-confirm --pass-env
       #   env:
-      #     DEBIAN_FRONTEND: "${{ vars.DEBIAN_FRONTEND }}"
-      #     # Needed to extract some tar archives.
-      #     LANG: "en_US.UTF-8"
+          # DEBIAN_FRONTEND: "${{ vars.DEBIAN_FRONTEND }}"
+          # # Needed to extract some tar archives.
+          # LANG: "en_US.UTF-8"
       # - name: Upload build artifacts
       #   uses: actions/upload-artifact@v3
       #   with:
