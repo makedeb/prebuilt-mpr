@@ -42,7 +42,7 @@ jobs:
         id: issue
         run: |
           pkg="$(echo "${{ github.ref_name }}" | sed 's|^pkg-update/||')"
-          gh issue list | grep "\`${pkg}\`" | awk '{print $0}' | echo "NUMBER=$(cat)" >> "${GITHUB_OUTPUT}"
+          gh issue list | grep "\`${pkg}\`" | awk '{print $1}' | echo "NUMBER=$(cat)" >> "${GITHUB_OUTPUT}"
       - name: Set status notification
         run: |
           if [[ "${{ needs.update-pkg.result }}" == 'failure' ]]; then
