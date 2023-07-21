@@ -29,7 +29,7 @@ jobs:
             set -x
             sleep 5000
   update-status:
-    name: Update status
+    name: Update Status
     runs-on: ubuntu-latest
     needs: update-pkg
     if: failure() || cancelled()
@@ -40,7 +40,6 @@ jobs:
           pkg="$(echo "${{ github.ref_name }}" | sed 's|^pkg-update/||')"
           gh issue list | grep "\`${pkg}\`" | awk '{print $0}' | echo "NUMBER=$(cat)" >> "${GITHUB_OUTPUT}"
       - name: Set status notification
-        if: job.status != 'success'
         run: |
           if [[ "${{ job.status }}" == 'failure' ]]; then
             msg='Failed'
