@@ -85,7 +85,7 @@ jobs:
             echo 'Unknown result type: ${{ needs.publish-pkgs.result }}' 1>&2
             exit 1
           fi
-          body="$(gh issue view '${{ steps.issue.outputs.NUMBER }}' --json body -q '.body' | sed -e "s|.*Building...|:x: ${msg}|"  -e "s|.*Pending publish.*|:x: ${msg}" -e "s|.*Deploying...|:x: ${msg}")"
+          body="$(gh issue view '${{ steps.issue.outputs.NUMBER }}' --json body -q '.body' | sed -e "s|.*Building...|:x: ${msg}|"  -e "s|.*Pending publish.*|:x: ${msg}|" -e "s|.*Deploying...|:x: ${msg}|")"
           gh issue edit "${{ steps.issue.outputs.NUMBER }}" -b "${body}"
 
 
