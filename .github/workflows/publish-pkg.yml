@@ -41,12 +41,12 @@ jobs:
           gh issue list | grep "\`${pkg}\`" | awk '{print $0}' | echo "NUMBER=$(cat)" >> "${GITHUB_OUTPUT}"
       - name: Set status notification
         run: |
-          if [[ "${{ failure() }}" == 'true' ]]; then
+          if [[ "${{ jobs.update-pkg.result }}" == 'failure' ]]; then
             msg='Failed'
-          elif [[ "${{ cancelled() }}" == 'true' ]]; then
+          elif [[ "${{ jobs.update-pkg.result }}" == 'cancelled' ]]; then
             msg='Cancelled'
           else
-            echo 'Unable to get failure type' 1>&2
+            echo 'Unknown result type: ${{ jobs.update-pkg.result }}' 1>&2
             exit 1
           fi
           body="$(gh issue view '${{ steps.issue.outputs.NUMBER }}' | sed "s|.*Building...|:x: ${msg}|")"
