@@ -9,13 +9,7 @@ pub static PKGLIST: Lazy<HashMap<String, Package>> =
 #[derive(Deserialize)]
 pub struct Package {
     #[serde(default)]
-    pub blocked_distros: Vec<BlockedDistros>,
-}
-
-#[derive(Deserialize)]
-pub enum BlockedDistros {
-    #[serde(rename = "focal")]
-    Focal,
-    #[serde(rename = "bullseye")]
-    Bullseye,
+    pub blocked_archs: Vec<String>,
+    #[serde(default)]
+    pub blocked_distros: Vec<String>,
 }

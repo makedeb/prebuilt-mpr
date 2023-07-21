@@ -12,5 +12,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Redirect issue to GitHub discussions
-        if: ${{ github.event.issues.author }} != 'renovate' && ${{ github.event.issues.author }} != 'kavplex'
         run: gh issue close "${{ github.event.issue.number }}" -c "The issue tracker for this project is used to manage package updates. If you have a question/issue with the Prebuilt-MPR, please use the [issues category on the Discussions page](https://github.com/makedeb/prebuilt-mpr/discussions/categories/issues)."

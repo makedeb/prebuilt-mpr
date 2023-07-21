@@ -15,10 +15,10 @@ pub static PBMPR_GITHUB_REPO: &str = "prebuilt-mpr";
 pub static PROGET_URL: &str = "proget.makedeb.org";
 
 /// Our Git name.
-pub static GIT_NAME: &str = "Kavplex Bot";
+pub static GIT_NAME: &str = "github-actions[bot]";
 
 /// Our Git email.
-pub static GIT_EMAIL: &str = "kavplex@hunterwittenborn.com";
+pub static GIT_EMAIL: &str = "41898282+github-actions[bot]@users.noreply.github.com";
 
 /// A [`reqwest::Client`] that can be used across this crate. This global is
 /// used in case any future requirements make it to where all requests need to

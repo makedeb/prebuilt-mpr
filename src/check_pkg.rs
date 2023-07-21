@@ -1,28 +1,40 @@
 use crate::{
     cache::{self, MprPackage},
-    util,
+    pkglist, util,
 };
 use git2::{BranchType, IndexAddOption, ObjectType, Remote, Repository, Signature};
-use rust_apt::{cache::Cache, util as apt_util};
+use octocrab::{
+    models::{
+        workflows::{Conclusion, Status},
+        RunId,
+    },
+    params::State,
+};
+use regex::Regex;
+use serde_json::{json, Value};
 use std::{
-    cmp::Ordering,
     fs::{self, File},
-    io::prelude::*,
+    io::{self, prelude::*},
     path::Path,
+    process::Command,
+    thread,
+    time::Duration,
 };
 
 /// The GitHub Actions package updater workflow file. See the code usages in
 /// this file for more info.
-static PKG_UPDATE_ACTION: &[u8] = include_bytes!("actions/update-pkg.yml");
-
-/// The GitHub Actions package publisher workflow file. See the code usages in
-/// this file for more info.
-static PKG_PUBLISH_ACTION: &[u8] = include_bytes!("actions/publish-pkg.yml");
+static PKG_UPDATE_ACTION: &[u8] = include_bytes!("../.github/workflows/update-pkg.yml");
 
 /// The CODEOWNERS file we use to review the proper people on package updates.
 static PKG_CODEOWNERS: &[u8] = include_bytes!("actions/CODEOWNERS");
 
-pub async fn check_pkg(gh_user: &str, gh_token: &str, pkg: &str) -> exitcode::ExitCode {
+/// The supported distros on the Prebuilt-MPR.
+static SUPPORTED_DISTROS: [&str; 5] = ["focal", "jammy", "lunar", "bullseye", "bookworm"];
+
+/// The supported architectures on the Prebuilt-MPR.
+static SUPPORTED_ARCHITECTURES: [&str; 2] = ["amd64", "arm64"];
+
+pub async fn check_pkg(gh_token: &str, pkg: &str) -> exitcode::ExitCode {
     let packages = match cache::get_mpr_packages().await {
         Ok(pkgs) => pkgs,
         Err(err) => {
@@ -38,54 +50,92 @@ pub async fn check_pkg(gh_user: &str, gh_token: &str, pkg: &str) -> exitcode::Ex
         }
     };
 
-    let cache = Cache::new::<&str>(&[]).unwrap();
-    let maybe_apt_pkg = cache.get(pkg);
+    // The distros/architectures that the package needs to be built for.
+    // Stored as tuples of (`distro`, `arch`).
+    let pkg_config = pkglist::PKGLIST.get(pkg).unwrap();
+    let mut old_version = None;
+    let mut needed_updates = vec![];
 
-    // If the Prebuilt-MPR version is less than that on the MPR (or the Prebuilt-MPR
-    // package just doesn't exist yet), than the Prebuilt-MPR package needs to
-    // be updated to match that on the MPR.
-    let needs_updated = if let Some(apt_pkg) = maybe_apt_pkg {
-        apt_util::cmp_versions(apt_pkg.candidate().unwrap().version(), &package.version)
-            == Ordering::Less
-    } else {
-        true
-    };
+    // Check each distro/architecture for updates.
+    for arch in SUPPORTED_ARCHITECTURES {
+        // This regex finds the version in a package line, while also validating that a
+        // package line can be found.
+        let version_re = {
+            let re = format!("^{pkg}/[a-z,]* ([a-z0-9.:-]+) {arch}");
+            Regex::new(&re).unwrap()
+        };
 
-    if needs_updated {
+        for distro in SUPPORTED_DISTROS {
+            if let Err(err) = fs::write(
+                "/etc/apt/sources.list",
+                format!("deb [arch=all,{arch} signed-by=/usr/share/keyrings/prebuilt-mpr-archive-keyring.gpg] https://{} prebuilt-mpr {distro}", util::PROGET_URL)
+            ) {
+                log::error!("Failed to write Prebuilt-MPR sources.list file: {err}");
+                return exitcode::TEMPFAIL;
+            };
+            let output = Command::new("apt-get").arg("update").output().unwrap();
+            if !output.status.success() {
+                io::stderr().write_all(&output.stderr).unwrap();
+                log::error!("Failed to update APT cache");
+                return exitcode::TEMPFAIL;
+            }
+
+            let output = Command::new("apt").args(["list", pkg]).output().unwrap();
+            if !output.status.success() {
+                io::stderr().write_all(&output.stderr).unwrap();
+                log::error!("Failed to fetch version list for '{pkg}'");
+                return exitcode::TEMPFAIL;
+            }
+            let stdout = String::from_utf8(output.stdout).unwrap();
+            let version = stdout
+                .lines()
+                .find(|line| version_re.is_match(line))
+                .map(|line| version_re.captures(line).unwrap()[1].to_owned());
+
+            if let Some(ver) = &version {
+                old_version = Some(ver.to_owned());
+            }
+
+            if (version.is_none() || version.as_ref().unwrap() != &package.version)
+                && !pkg_config.blocked_distros.contains(&distro.to_owned())
+                && !pkg_config.blocked_archs.contains(&arch.to_owned())
+            {
+                needed_updates.push((distro, arch));
+            }
+        }
+    }
+
+    // If we have package versions that need to be updated, then do so.
+    if !needed_updates.is_empty() {
         log::info!("Updating '{pkg}'...");
-        update_pkg(gh_user, gh_token, package).await;
+        return update_pkg(gh_token, package, old_version, &needed_updates).await;
     } else {
         log::info!("'{pkg}' is up to date!");
-    };
+    }
 
     exitcode::OK
 }
 
-async fn update_pkg(gh_user: &str, gh_token: &str, pkg: &MprPackage) {
+async fn update_pkg(
+    gh_token: &str,
+    pkg: &MprPackage,
+    old_version: Option<String>,
+    needed_updates: &[(&str, &str)],
+) -> exitcode::ExitCode {
     // Stuff we need throughout this function.
-    let mpr_repo_url = format!("https://{}/{}", util::MPR_URL, pkg.pkgbase);
     let gh_repo_url = format!(
-        "https://{gh_user}:{gh_token}@github.com/{}/{}",
+        "https://x-access-token:{gh_token}@github.com/{}/{}",
         util::PBMPR_GITHUB_ORG,
         util::PBMPR_GITHUB_REPO
     );
+    let mpr_repo_url = format!("https://{}/{}", util::MPR_URL, pkg.pkgbase);
     let gh_pkg_branch = format!("pkg/{}", pkg.pkgbase);
     let gh_pkg_update_branch = format!("pkg-update/{}", pkg.pkgbase);
 
     // Set up the octocrab instance.
     let crab = octocrab::instance();
-    let pulls = crab.pulls(util::PBMPR_GITHUB_ORG, util::PBMPR_GITHUB_REPO);
-
-    let active_pulls = async || {
-        pulls
-            .list()
-            .head(&gh_pkg_update_branch)
-            .base(&gh_pkg_branch)
-            .send()
-            .await
-            .unwrap()
-            .items
-    };
+    let workflows = crab.workflows(util::PBMPR_GITHUB_ORG, util::PBMPR_GITHUB_REPO);
+    let issues = crab.issues(util::PBMPR_GITHUB_ORG, util::PBMPR_GITHUB_REPO);
 
     // Clone the GitHub and MPR repos.
     log::info!("Cloning '{mpr_repo_url}' into 'mpr-repo/'...");
@@ -161,6 +211,7 @@ async fn update_pkg(gh_user: &str, gh_token: &str, pkg: &MprPackage) {
     }
 
     check_actions_file(&gh_repo, &mut gh_remote, &gh_pkg_branch);
+    check_actions_file(&gh_repo, &mut gh_remote, &gh_pkg_update_branch);
 
     // Checkout the GitHub repository to the correct branch.
     let gh_branch = gh_repo
@@ -265,40 +316,331 @@ async fn update_pkg(gh_user: &str, gh_token: &str, pkg: &MprPackage) {
         gh_remote.push(&[&gh_pkg_update_branch_ref], None).unwrap();
     }
 
-    // Set up the PR to merge in the changes, if no existing PR is open. Also make
-    // sure the PR title is correct (i.e. we updated the version after the PR
-    // was already open).
-    let pr_title = format!("Update `{}` to `{}`", pkg.pkgbase, pkg.version);
-    let current_pulls = active_pulls().await;
+    // Check the latest workflow run to see if it's building the correct packages.
+    // If it's not, cancel it and start a new run.
+    //
+    // First get the list of workflow runs.
+    let mut workflow_run = None;
+    let mut workflow_list = vec![];
 
-    if !current_pulls.is_empty() {
-        log::info!("PR already exists, skipping PR creation.");
+    let mut page_num: u32 = 0;
 
-        let current_pull = &current_pulls[0];
+    loop {
+        let mut new_item = false;
+        let page = match workflows
+            .list_runs("update-pkg.yml")
+            .branch(&gh_pkg_update_branch)
+            .page(page_num)
+            .send()
+            .await
+            .ok()
+        {
+            Some(page) => page,
+            None => break,
+        };
 
-        if current_pull.title.as_ref().unwrap() != &pr_title {
-            log::info!("PR has incorrect title. Updating title...");
-            pulls
-                .update(current_pull.number)
-                .title(pr_title)
-                .send()
-                .await
-                .unwrap();
+        for new_run in page.items {
+            new_item = true;
+            if !workflow_list.iter().any(|run| run == &new_run) {
+                workflow_list.push(new_run);
+            }
         }
-        return;
+
+        if !new_item {
+            break;
+        }
+
+        page_num += 1;
     }
 
-    log::info!("Creating PR...");
-    pulls
-        .create(
-            format!("Update `{}` to `{}`", pkg.pkgbase, pkg.version),
-            &gh_pkg_update_branch,
-            &gh_pkg_branch,
+    // Next, check for old running jobs (anything but the most recent job) and
+    // cancel them.
+    if workflow_list.len() > 1 {
+        for workflow in &workflow_list[1..] {
+            let status: Status =
+                serde_json::from_str(&format!(r#"{:?}"#, workflow.status)).unwrap();
+            if status == Status::Queued || status == Status::InProgress {
+                log::info!("Cancelling old workflow run '#{}'", workflow.run_number);
+                crab.actions()
+                    .cancel_workflow_run(
+                        util::PBMPR_GITHUB_ORG,
+                        util::PBMPR_GITHUB_REPO,
+                        workflow.id,
+                    )
+                    .await
+                    .unwrap();
+            }
+        }
+    }
+
+    // Next, check the latest run for the original required checks.
+    if !workflow_list.is_empty() {
+        workflow_run = Some(workflow_list.swap_remove(0));
+    }
+    let correct_jobs = async {
+        if let Some(run) = workflow_run.as_ref() {
+            let actual_jobs: Vec<String> = workflows
+                .list_jobs(run.id)
+                .send()
+                .await
+                .unwrap()
+                .items
+                .into_iter()
+                .map(|item| item.name)
+                .collect();
+            let mut expected_jobs = vec![];
+
+            for target in needed_updates {
+                // The format of this string is closely tied to that from
+                // `src/actions/update-pkg.yml` in this repository.
+                expected_jobs.push(format!("Build Package ({}:{})", target.0, target.1));
+            }
+
+            for job in &expected_jobs {
+                if !actual_jobs.contains(job) {
+                    return false;
+                }
+            }
+
+            let conclusion: Conclusion = serde_json::from_str(&format!(
+                r#"{:?}"#,
+                run.conclusion
+                    .as_deref()
+                    // Temporary fix for https://github.com/XAMPPRocky/octocrab/issues/422.
+                    .map(|conclusion| if conclusion == "startup_failure" {
+                        "failure"
+                    } else {
+                        conclusion
+                    })
+                    .unwrap_or("success")
+            ))
+            .unwrap();
+
+            actual_jobs.len() == expected_jobs.len()
+                && ![
+                    Conclusion::Cancelled,
+                    Conclusion::TimedOut,
+                    Conclusion::Failure,
+                ]
+                .contains(&conclusion)
+        } else {
+            false
+        }
+    }
+    .await;
+
+    // Create a new job if:
+    // 1. The newest job isn't building the correct packages, or
+    // 2. The previous job failed, or
+    // 3. There was no previous job.
+    if !correct_jobs || workflow_run.is_none() {
+        // Cancel the old job if it's still running.
+        if let Some(run) = &workflow_run {
+            let status: Status = serde_json::from_str(&format!(r#"{:?}"#, run.status)).unwrap();
+            if status == Status::Queued || status == Status::InProgress {
+                log::info!("Cancelling out of date job '#{}'...", run.run_number);
+                crab.actions()
+                    .cancel_workflow_run(util::PBMPR_GITHUB_ORG, util::PBMPR_GITHUB_REPO, run.id)
+                    .await
+                    .unwrap();
+            }
+        }
+
+        // Create the new job.
+        let mut targets = vec![];
+        for target in needed_updates {
+            targets.push(json!({
+                "arch": target.1,
+                "distro": target.0,
+                "image-tag": match target.0 {
+                    "focal" => "ubuntu-focal",
+                    "jammy" => "ubuntu-jammy",
+                    "lunar" => "ubuntu-lunar",
+                    "bullseye" => "debian-bullseye",
+                    "bookworm" => "debian-bookworm",
+                    _ => unreachable!()
+                }
+            }));
+        }
+
+        crab.actions()
+            .create_workflow_dispatch(
+                util::PBMPR_GITHUB_ORG,
+                util::PBMPR_GITHUB_REPO,
+                "update-pkg.yml",
+                &gh_pkg_update_branch,
+            )
+            .inputs(json!({
+                "pkgbase": pkg.pkgbase,
+                "targets": Value::Array(targets).to_string()
+            }))
+            .send()
+            .await
+            .unwrap();
+        let new_job = loop {
+            let mut tries = 0;
+            let maybe_job = workflows
+                .list_runs("update-pkg.yml")
+                .branch(&gh_pkg_update_branch)
+                .per_page(1)
+                .send()
+                .await
+                .unwrap()
+                .items
+                .get(0)
+                .map(|job| job.to_owned());
+
+            // When we create a job it doesn't show up immediately. So loop until it does
+            // (or bork out if we can't get it after a while).
+            let prev_id = workflow_run.as_ref().map(|run| run.id).unwrap_or(RunId(0));
+            if let Some(job) = maybe_job && job.id != prev_id {
+                break job;
+            } else {
+                tries += 1;
+                if tries == 10 {
+                    log::error!("Failed to fetch new run job. Is it running?");
+                    return exitcode::TEMPFAIL;
+                }
+                thread::sleep(Duration::from_secs(1));
+            }
+        };
+        log::info!("Created new workflow run at '#{}'", new_job.run_number);
+        workflow_run = Some(new_job);
+    }
+
+    // Check if there's a diff.
+    let is_diff = !crab
+        .get::<serde_json::Value, String, &str>(
+            format!(
+                "/repos/{}/{}/compare/{gh_pkg_branch}...{gh_pkg_update_branch}",
+                util::PBMPR_GITHUB_ORG,
+                util::PBMPR_GITHUB_REPO
+            ),
+            None,
         )
-        .maintainer_can_modify(true)
+        .await
+        .unwrap()["files"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|value| !value["filename"].as_str().unwrap().starts_with(".github/"))
+        .collect::<Vec<_>>()
+        .is_empty();
+
+    // Generate the issue description.
+    let run = workflow_run.unwrap();
+    let issue_title = format!(
+        "{}: `{}`",
+        if old_version.is_none() {
+            "New Package"
+        } else {
+            "Package Update"
+        },
+        pkg.pkgbase
+    );
+    let issue_desc = format!(
+        "\
+        `{}` has a new version available and is ready to be reviewed makedeb/prebuilt-mpr-reviewers!
+
+        ## Package Information
+        **Status**
+        :building_construction: Building...
+
+        **Update Job**
+        [#{}](https://github.com/{}/{}/actions/runs/{})
+
+        **Version**
+        {}
+
+        **Changed Files**
+        {}
+
+        **Updated Distributions**
+        {}\
+        ",
+        pkg.pkgbase,
+        run.run_number,
+        util::PBMPR_GITHUB_ORG,
+        util::PBMPR_GITHUB_REPO,
+        run.id,
+        if let Some(ver) = &old_version {
+            if ver == &pkg.version {
+                "*no change*".to_owned()
+            } else {
+                format!("`{ver}` ⭢ **`{}`**", pkg.version)
+            }
+        } else {
+            format!("`{}`", pkg.version)
+        },
+        if is_diff {
+            format!("[`{gh_pkg_branch}` ⭠ `{gh_pkg_update_branch}`](https://github.com/{0}/{1}/compare/{gh_pkg_branch}...{gh_pkg_update_branch})", util::PBMPR_GITHUB_ORG, util::PBMPR_GITHUB_REPO)
+        } else {
+            "*no files changed*".to_owned()
+        },
+        {
+            let mut pkgs: Vec<(String, String)> = vec![];
+            for pkg in needed_updates {
+                match pkgs.iter().position(|item| item.0 == pkg.0) {
+                    Some(index) => {
+                        let arch_string = &mut pkgs[index].1;
+                        if !arch_string.contains(pkg.1) {
+                            arch_string.push_str(&format!(", `{}`", pkg.1))
+                        }
+                    },
+                    None => pkgs.push((pkg.0.to_owned(), format!("`{}`", pkg.1)))
+                }
+            }
+
+            pkgs.into_iter()
+                .map(|item| format!("\\- {1} ({})", item.1, match item.0.as_str() {
+                    "focal" => "Ubuntu 20.04",
+                    "jammy" => "Ubuntu 22.04",
+                    "lunar" => "Ubuntu 23.04",
+                    "bullseye" => "Debian 11",
+                    "bookworm" => "Debian 12",
+                    _ => unreachable!()
+                }))
+                .collect::<Vec<String>>()
+                .join("\n")
+        }
+    )
+    .lines()
+    .map(|line| line.trim_start())
+    .collect::<Vec<&str>>()
+    .join("\n");
+
+    // If an old issue exists, update the title and body.
+    let issue_list = issues
+        .list()
+        .per_page(100)
+        .state(State::Open)
         .send()
         .await
         .unwrap();
+    let issue_list = crab.all_pages(issue_list).await.unwrap();
+    let maybe_issue = issue_list
+        .iter()
+        .find(|issue| issue.title.contains(&format!("`{}`", pkg.pkgbase)));
+
+    if let Some(issue) = maybe_issue && (issue.title != issue_title || issue.body != Some(issue_desc.clone())) {
+        log::info!("Updating issue #{}...", issue.number);
+        issues
+            .update(issue.number)
+            .title(&issue_title)
+            .body(&issue_desc)
+            .send()
+            .await
+            .unwrap();
+    } else if maybe_issue.is_none() {
+        let issue = issues
+            .create(issue_title)
+            .body(issue_desc)
+            .send()
+            .await
+            .unwrap();
+        log::info!("Created new issue #{}", issue.number);
+    }
+    exitcode::OK
 }
 
 /// Make sure that the GitHub Actions file is created and up to date on the
@@ -317,10 +659,6 @@ fn check_actions_file(gh_repo: &Repository, gh_remote: &mut Remote, pkg_branch: 
         .unwrap()
         .write_all(PKG_UPDATE_ACTION)
         .unwrap();
-    File::create("gh-repo/.github/workflows/publish-pkg.yml")
-        .unwrap()
-        .write_all(PKG_PUBLISH_ACTION)
-        .unwrap();
     File::create("gh-repo/.github/CODEOWNERS")
         .unwrap()
         .write_all(PKG_CODEOWNERS)
@@ -335,11 +673,7 @@ fn check_actions_file(gh_repo: &Repository, gh_remote: &mut Remote, pkg_branch: 
         let mut index = gh_repo.index().unwrap();
         index
             .add_all(
-                [
-                    ".github/workflows/update-pkg.yml",
-                    ".github/workflows/publish-pkg.yml",
-                    ".github/CODEOWNERS",
-                ],
+                [".github/workflows/update-pkg.yml", ".github/CODEOWNERS"],
                 IndexAddOption::DEFAULT,
                 None,
             )

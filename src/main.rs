@@ -1,4 +1,6 @@
 #![feature(async_closure)]
+#![feature(let_chains)]
+
 use clap::{Parser, Subcommand};
 use log::LevelFilter;
 use octocrab::Octocrab;
@@ -8,7 +10,6 @@ mod cache;
 mod check_pkg;
 mod pkglist;
 mod run_checks;
-mod upload_debs;
 mod util;
 
 #[derive(Parser)]
@@ -28,19 +29,8 @@ enum Command {
     /// Check if a package in the Prebuilt-MPR is out of date, creating a PR on
     /// GitHub if it is
     CheckPkg {
-        /// The username of a GitHub account.
-        #[arg(long = "github-username", env = "GITHUB_USERNAME")]
-        github_username: String,
         /// The package to check
         pkg: String,
-    },
-    /// Upload the '.deb' files from a PR to the Prebuilt-MPR APT repository
-    UploadDebs {
-        /// The ProGet token to upload packages with.
-        #[arg(long = "proget-token", env = "PROGET_TOKEN")]
-        proget_token: String,
-        /// The PR number to fetch the '.deb' files from
-        pr: u64,
     },
 }
 
@@ -68,13 +58,7 @@ async fn main() {
     // Run the CLI.
     let exit_code = match cli.command {
         Command::RunChecks => run_checks::run_checks().await,
-        Command::CheckPkg {
-            github_username,
-            pkg,
-        } => check_pkg::check_pkg(&github_username, &cli.github_token, &pkg).await,
-        Command::UploadDebs { pr, proget_token } => {
-            upload_debs::upload_debs(pr, &proget_token).await
-        }
+        Command::CheckPkg { pkg } => check_pkg::check_pkg(&cli.github_token, &pkg).await,
     };
     process::exit(exit_code);
 }

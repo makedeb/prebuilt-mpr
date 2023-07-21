@@ -1,13 +1,13 @@
 use crate::util;
-use flate2::read::GzDecoder;
 use reqwest::StatusCode;
 use serde::Deserialize;
-use std::io::prelude::*;
 
 #[derive(Deserialize)]
 pub struct MprPackage {
     #[serde(rename = "PackageBase")]
     pub pkgbase: String,
+    #[serde(rename = "Name")]
+    pub name: String,
     #[serde(rename = "Version")]
     pub version: String,
 }

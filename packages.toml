@@ -1,14 +1,14 @@
 [airshipper]
 
-[appimagetool-bin]
-
 [appimage-builder]
+blocked_archs = ["arm64"]
 
 [bat]
 
 [bats]
 
 [bitwarden-bin]
+blocked_archs = ["arm64"]
 
 [cargo-appimage]
 
@@ -20,8 +20,10 @@ blocked_distros = ["focal", "bullseye"]
 [cloudflared]
 
 [cloudflare-warp]
+blocked_archs = ["arm64"]
 
 [code-bin]
+blocked_archs = ["arm64"]
 
 [comb]
 
@@ -30,6 +32,7 @@ blocked_distros = ["focal", "bullseye"]
 [deno]
 
 [discord]
+blocked_archs = ["arm64"]
 
 [docuum]
 
@@ -42,6 +45,7 @@ blocked_distros = ["focal", "bullseye"]
 [drone-runner-exec]
 
 [element-desktop-bin]
+blocked_archs = ["arm64"]
 
 [exa]
 
@@ -87,8 +91,6 @@ blocked_distros = ["focal", "bullseye"]
 
 [npm]
 
-[pacstall]
-
 [parse-changelog]
 
 [pg]
@@ -99,6 +101,7 @@ blocked_distros = ["focal", "bullseye"]
 
 [proton-ge-custom-bin]
 blocked_distros = ["bullseye"]
+blocked_archs = ["arm64"]
 
 [rclone]
 

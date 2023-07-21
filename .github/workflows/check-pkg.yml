@@ -20,16 +20,13 @@ jobs:
         with:
           makedeb-repo: false
           pbmpr-repo: true
-      - name: Install needed dependencies
-        run: sudo apt-get install libapt-pkg-dev -y
       - name: Download Prebuilt-MPR helper binary
         run: gh release download -p pbmpr
         env:
-          GITHUB_TOKEN: "${{ secrets.GH_TOKEN }}"
+          GITHUB_TOKEN: "${{ github.token }}"
       - name: Make Prebuilt-MPR helper binary executable
         run: chmod +x ./pbmpr
       - name: Run update checks for the specified package
-        run: ./pbmpr check-pkg "${{ inputs.pkgbase }}"
+        run: sudo rm /etc/apt/sources.list.d/* && sudo -E ./pbmpr check-pkg "${{ inputs.pkgbase }}"
         env:
-          GITHUB_TOKEN: "${{ secrets.GH_TOKEN }}"
-          GITHUB_USERNAME: "kavplex"
+          GITHUB_TOKEN: "${{ github.token }}"
