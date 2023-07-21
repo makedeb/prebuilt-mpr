@@ -33,6 +33,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: update-pkg
     if: failure() || cancelled()
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
       - name: Get issue number
         id: issue
@@ -51,8 +53,6 @@ jobs:
           fi
           body="$(gh issue view '${{ steps.issue.outputs.NUMBER }}' | sed "s|.*Building...|:x: ${msg}|")"
           gh issue edit "${{ steps.issue.outputs.NUMBER }}" -b "${body}"
-        env:
-          GH_TOKEN: ${{ github.token }}
 
 
       # - name: Install prerequisites
