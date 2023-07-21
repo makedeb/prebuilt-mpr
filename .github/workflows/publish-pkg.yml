@@ -26,12 +26,19 @@ jobs:
         run: echo "${SCRIPT}" | docker run -i proget.hunterwittenborn.com/docker/makedeb/makedeb:${{ matrix.target.image-tag }} bash
         env:
           SCRIPT: |
-            set -x
-            sleep 5000
+            echo 'DONE!'
+  publish-pkgs:
+    name: Publish Packages
+    runs-on: ubuntu-latest
+    environment: deploy
+    needs: [update-pkg]
+    steps:
+      - name: Test step
+        run: echo "We ran!"
   update-status:
     name: Update Status
     runs-on: ubuntu-latest
-    needs: update-pkg
+    needs: publish-pkgs
     if: failure() || cancelled()
     env:
       GH_TOKEN: ${{ github.token }}
@@ -45,12 +52,12 @@ jobs:
           gh issue list | grep "\`${pkg}\`" | awk '{print $1}' | echo "NUMBER=$(cat)" >> "${GITHUB_OUTPUT}"
       - name: Set status notification
         run: |
-          if [[ "${{ needs.update-pkg.result }}" == 'failure' ]]; then
+          if [[ "${{ needs.publish-pkg.result }}" == 'failure' ]]; then
             msg='Failed'
-          elif [[ "${{ needs.update-pkg.result }}" == 'cancelled' ]]; then
+          elif [[ "${{ needs.publish-pkg.result }}" == 'cancelled' ]]; then
             msg='Cancelled'
           else
-            echo 'Unknown result type: ${{ needs.update-pkg.result }}' 1>&2
+            echo 'Unknown result type: ${{ needs.publish-pkg.result }}' 1>&2
             exit 1
           fi
           body="$(gh issue view '${{ steps.issue.outputs.NUMBER }}' --json body -q '.body' | sed "s|.*Building...|:x: ${msg}|")"
