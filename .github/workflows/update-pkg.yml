@@ -52,8 +52,8 @@ jobs:
           sudo systemctl restart docker
       - name: Build package
         run: |
-          chmod a+rwx path/
-          cd path/
+          chmod a+rwx pkg/
+          cd pkg/
           echo "${SCRIPT}" | docker run \
             -i \
             -v "${PWD}:/home/makedeb" \
