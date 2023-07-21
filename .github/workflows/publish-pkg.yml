@@ -41,8 +41,8 @@ jobs:
         run: |
           pkg="$(echo "${{ github.ref_name }}" | sed 's|^pkg-update/||')"
           number="$(gh issue list | grep "\`${pkg}\`" | awk '{print $1}')"
-          body="$(gh issue view '${number}' --json body -q '.body' | sed "s|.*Building...|:memo: Pending publish approval...|")"
-          gh issue edit "${{ steps.issue.outputs.NUMBER }}" -b "${body}"
+          body="$(gh issue view "${number}" --json body -q '.body' | sed "s|.*Building...|:memo: Pending publish approval...|")"
+          gh issue edit "${number}" -b "${body}"
   publish-pkgs:
     name: Publish Packages
     runs-on: ubuntu-latest
@@ -58,8 +58,8 @@ jobs:
         run: |
           pkg="$(echo "${{ github.ref_name }}" | sed 's|^pkg-update/||')"
           number="$(gh issue list | grep "\`${pkg}\`" | awk '{print $1}')"
-          body="$(gh issue view '${number}' --json body -q '.body' | sed "s|.*Pending publish approval...|:package: Deploying...|")"
-          gh issue edit "${{ steps.issue.outputs.NUMBER }}" -b "${body}"
+          body="$(gh issue view "${number}" --json body -q '.body' | sed "s|.*Pending publish approval...|:package: Deploying...|")"
+          gh issue edit "${number}" -b "${body}"
   update-status:
     name: Update Status
     runs-on: ubuntu-latest
