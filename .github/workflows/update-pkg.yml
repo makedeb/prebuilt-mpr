@@ -149,7 +149,7 @@ jobs:
     name: Publish Packages
     runs-on: ubuntu-latest
     environment: Prebuilt-MPR
-    if: !cancelled()
+    if: ${{ !cancelled() }}
     needs: [set-status]
     env:
       GH_TOKEN: ${{ github.token }}
