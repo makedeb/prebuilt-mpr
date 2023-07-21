@@ -3,10 +3,10 @@ name: Update Package
 run-name: "Update Package: '${{ inputs.pkgbase }}'"
 on:
   workflow_dispatch:
-    pkgbase:
-      required: true
-      type: string
     inputs:
+      pkgbase:
+        required: true
+        type: string
       # A JSON array. The array items are objects containing these keys:
       # - 'arch'
       # - 'distro'
