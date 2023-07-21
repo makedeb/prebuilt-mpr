@@ -36,6 +36,8 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
       - name: Get issue number
         id: issue
         run: |
