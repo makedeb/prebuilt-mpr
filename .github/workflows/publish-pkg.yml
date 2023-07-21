@@ -41,9 +41,9 @@ jobs:
           gh issue list | grep "\`${pkg}\`" | awk '{print $0}' | echo "NUMBER=$(cat)" >> "${GITHUB_OUTPUT}"
       - name: Set status notification
         run: |
-          if [[ "${{ jobs.update-pkg.result }}" == 'failure' ]]; then
+          if [[ "${{ needs.update-pkg.result }}" == 'failure' ]]; then
             msg='Failed'
-          elif [[ "${{ jobs.update-pkg.result }}" == 'cancelled' ]]; then
+          elif [[ "${{ needs.update-pkg.result }}" == 'cancelled' ]]; then
             msg='Cancelled'
           else
             echo 'Unknown result type: ${{ jobs.update-pkg.result }}' 1>&2
