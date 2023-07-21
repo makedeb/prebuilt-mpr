@@ -41,7 +41,7 @@ jobs:
       - name: Upload built packages
         uses: actions/upload-artifact@v3
         with:
-          name: "${{ matrix.target.distro }}:${{ matrix.target.arch }}"
+          name: "${{ matrix.target.distro }}-${{ matrix.target.arch }}"
           path: '*.deb'
   set-status:
     name: Set Pending Status
