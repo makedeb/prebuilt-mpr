@@ -46,7 +46,7 @@ jobs:
           elif [[ "${{ needs.update-pkg.result }}" == 'cancelled' ]]; then
             msg='Cancelled'
           else
-            echo 'Unknown result type: ${{ jobs.update-pkg.result }}' 1>&2
+            echo 'Unknown result type: ${{ needs.update-pkg.result }}' 1>&2
             exit 1
           fi
           body="$(gh issue view '${{ steps.issue.outputs.NUMBER }}' | sed "s|.*Building...|:x: ${msg}|")"
