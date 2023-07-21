@@ -34,11 +34,11 @@ jobs:
             set -x
             sleep 5000
       - name: Set status notification
-        if: ${{ !success() }}
+        if: job.status != 'success'
         run: |
-          if [[ "${{ failure() }}" == 'true' ]]; then
+          if [[ "${{ job.status }}" == 'failure' ]]; then
             msg='Failed'
-          elif [[ "${{ failure() }}" == 'true' ]]; then
+          elif [[ "${{ job.status }}" == 'cancelled' ]]; then
             msg='Cancelled'
           else
             echo 'Unable to get failure type' 1>&2
