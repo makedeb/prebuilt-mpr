@@ -22,12 +22,30 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+      - name: Get issue number
+        id: issue
+        run: |
+          pkg="$(echo "${{ github.ref_name }}" | sed 's|^pkg-update/||')"
+          gh issue list | grep "\`${pkg}\`" | awk '{print $0}' | echo "NUMBER=$(cat)" >> "${GITHUB_OUTPUT}"
       - name: Build package
         run: echo "${SCRIPT}" | docker run -i proget.hunterwittenborn.com/docker/makedeb/makedeb:${{ matrix.target.image-tag }} bash
         env:
           SCRIPT: |
             set -x
             sleep 5000
+      - name: Set status notification
+        on: ${{ failure() || cancelled() }}
+        run: |
+          if [[ "${{ failure() }}" == 'true' ]]; then
+            msg='Failed'
+          elif [[ "${{ failure() }}" == 'true' ]]; then
+            msg='Cancelled'
+          else
+            echo 'Unable to get failure type' 1>&2
+            exit 1
+          fi
+          body="$(gh issue view '${{ steps.issue.outputs.NUMBER }}' | sed "s|.*Building...|:x: ${msg}|")"
+          gh issue edit "${{ steps.issue.outputs.NUMBER }}" -b "${body}"
 
       # - name: Install prerequisites
       #   run: sudo apt install git locales-all -y
