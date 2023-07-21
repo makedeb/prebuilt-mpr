@@ -28,6 +28,14 @@ jobs:
       matrix:
         target: ${{ fromJson(inputs.targets) }}
     steps:
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+          remove-docker-images: 'true'
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: Set up QEMU
@@ -141,7 +149,7 @@ jobs:
     name: Publish Packages
     runs-on: ubuntu-latest
     environment: Prebuilt-MPR
-    if: always()
+    if: !cancelled()
     needs: [set-status]
     env:
       GH_TOKEN: ${{ github.token }}
