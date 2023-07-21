@@ -53,7 +53,7 @@ jobs:
             echo 'Unknown result type: ${{ needs.update-pkg.result }}' 1>&2
             exit 1
           fi
-          body="$(gh issue view '${{ steps.issue.outputs.NUMBER }}' | sed "s|.*Building...|:x: ${msg}|")"
+          body="$(gh issue view '${{ steps.issue.outputs.NUMBER }}' --json body -q '.body' | sed "s|.*Building...|:x: ${msg}|")"
           gh issue edit "${{ steps.issue.outputs.NUMBER }}" -b "${body}"
 
 
