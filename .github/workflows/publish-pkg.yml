@@ -1,35 +1,46 @@
-# Publish .deb packages to the Prebuilt-MPR.
-name: Publish Package
+# Update an MPR package.
+name: Update Package
 on:
-  pull_request:
-    types:
-      - closed
+  workflow_dispatch:
+    inputs:
+      # A JSON array. The array items are objects containing these keys:
+      # - 'arch'
+      # - 'distro'
+      # - 'image-tag'
+      targets:
+        required: true
+        type: string
 
 jobs:
-  publish-pkg:
-    name: Publish to Prebuilt-MPR
+  update-pkg:
+    name: Build Package (${{ matrix.target.distro }}/${{ matrix.target.arch }})
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJson(inputs.targets) }}
     steps:
-      - name: Install needed dependencies
-        run: sudo apt-get install libapt-pkg-dev -y
-      - name: Download Prebuilt-MPR helper binary
-        run: gh release download -p pbmpr -R "${{ github.repository }}"
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Build package
+        run: echo "${SCRIPT}" | docker run -i proget.hunterwittenborn.com/docker/makedeb/makedeb:${{ matrix.target.image-tag }} bash
         env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-      - name: Make Prebuilt-MPR helper binary executable
-        run: chmod +x ./pbmpr
-      - name: Upload packages to Prebuilt-MPR
-        run: ./pbmpr upload-debs "${{ github.event.pull_request.number }}"
-        env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          PROGET_TOKEN: "${{ secrets.PROGET_TOKEN }}"
-      - name: Report succeeded build status
-        run: gh pr comment "${{ github.event.pull_request.number }}" --body 'Package publishing has succeeded! :tada:' -R "${{ github.repository }}"
-        env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-      - name: Report failed build status
-        if: failure()
-        run: gh pr comment "${{ github.event.pull_request.number }}" --body '**Package publishing has failed @makedeb/prebuilt-mpr-developers!** Please look over the [Checks tab](/${{ github.repository }}/pull/${{ github.event.pull_request.number }}/checks) to see what went wrong.' -R "${{ github.repository }}"
-        env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          SCRIPT: |
+            set -x
+            sleep 5000
+
+      # - name: Install prerequisites
+      #   run: sudo apt install git locales-all -y
+      # - name: Correct permissions so makedeb can run
+      #   run: chown 'makedeb:makedeb' ./ "${HOME}" -R
+      # - name: Run makedeb
+      #   run: sudo -Eu makedeb makedeb -s --no-confirm --pass-env
+      #   env:
+      #     DEBIAN_FRONTEND: "${{ vars.DEBIAN_FRONTEND }}"
+      #     # Needed to extract some tar archives.
+      #     LANG: "en_US.UTF-8"
+      # - name: Upload build artifacts
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: ${{ matrix.distro-image }}
+      #     path: '*.deb'
