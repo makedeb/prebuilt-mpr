@@ -46,7 +46,7 @@ jobs:
   publish-pkgs:
     name: Publish Packages
     runs-on: ubuntu-latest
-    environment: deploy
+    environment: Prebuilt-MPR
     needs: [set-status]
     env:
       GH_TOKEN: ${{ github.token }}
@@ -64,7 +64,7 @@ jobs:
     name: Update Status
     runs-on: ubuntu-latest
     needs: publish-pkgs
-    if: failure() || cancelled()
+    if: always() || cancelled()
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
@@ -78,14 +78,16 @@ jobs:
       - name: Set status
         run: |
           if [[ "${{ needs.publish-pkgs.result }}" == 'failure' || "${{ needs.publish-pkgs.result }}" == 'skipped' ]]; then
-            msg='Failed'
+            msg=':x: Failed'
           elif [[ "${{ needs.publish-pkgs.result }}" == 'cancelled' ]]; then
-            msg='Cancelled'
+            msg=':x: Cancelled'
+          elif [[ "${{ needs.publish-pkgs.result }}" == 'success' ]]; then
+            msg=':tada: Deployed'
           else
             echo 'Unknown result type: ${{ needs.publish-pkgs.result }}' 1>&2
             exit 1
           fi
-          body="$(gh issue view '${{ steps.issue.outputs.NUMBER }}' --json body -q '.body' | sed -e "s|.*Building...|:x: ${msg}|"  -e "s|.*Pending publish.*|:x: ${msg}|" -e "s|.*Deploying...|:x: ${msg}|")"
+          body="$(gh issue view '${{ steps.issue.outputs.NUMBER }}' --json body -q '.body' | sed -e "s|.*Building...|${msg}|"  -e "s|.*Pending publish.*|${msg}|" -e "s|.*Deploying...|${msg}|")"
           gh issue edit "${{ steps.issue.outputs.NUMBER }}" -b "${body}"
 
 
