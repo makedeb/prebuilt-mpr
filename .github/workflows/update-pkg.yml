@@ -38,11 +38,22 @@ jobs:
           remove-docker-images: 'true'
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          path: pkg
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
+      - name: Set up Docker config
+        run: |
+          # The 'Maximize build space' step only makes the extra storage
+          # available to our workspace directory. Our Docker container
+          # will produce a lot of storage, so store all of that stuff in
+          # the workspace directory too.
+          echo "{\"data-root\":\"${PWD}/docker\"}" | sudo tee /etc/docker/daemon.json 1> /dev/null
+          sudo systemctl restart docker
       - name: Build package
         run: |
-          chmod a+rwx "${PWD}"
+          chmod a+rwx path/
+          cd path/
           echo "${SCRIPT}" | docker run \
             -i \
             -v "${PWD}:/home/makedeb" \
@@ -128,7 +139,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: "${{ matrix.target.distro }}-${{ matrix.target.arch }}"
-          path: '*.deb'
+          path: 'pkg/*.deb'
   set-status:
     name: Set Pending Status
     runs-on: ubuntu-latest
