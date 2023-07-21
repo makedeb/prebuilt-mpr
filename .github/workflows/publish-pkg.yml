@@ -26,6 +26,7 @@ jobs:
         uses: docker/setup-qemu-action@v2
       - name: Build package
         run: |
+          chmod a+rwx "${PWD}"
           echo "${SCRIPT}" | docker run \
             -i \
             -v "${PWD}:/home/makedeb" \
