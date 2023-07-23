@@ -62,6 +62,8 @@ jobs:
         env:
           SCRIPT: |
             export "DEBIAN_FRONTEND=${{ vars.DEBIAN_FRONTEND }}"
+            export CARGO_NET_GIT_FETCH_WITH_CLI=true # workaround for https://github.com/rust-lang/cargo/issues/10583.
+            sudo chown 'makedeb:makedeb' "${HOME}" -R
 
             # Install Prerequisites.
             sudo apt-get update
@@ -143,6 +145,7 @@ jobs:
   set-status:
     name: Set Pending Status
     runs-on: ubuntu-latest
+    if: ${{ !cancelled() }}
     needs: [update-pkg]
     env:
       GH_TOKEN: ${{ github.token }}
@@ -180,10 +183,10 @@ jobs:
           number="$(gh issue list | grep "\`${pkg}\`" | awk '{print $1}')"
           body="$(gh issue view "${number}" --json body -q '.body' | sed "s|.*Pending publish approval...|:package: Deploying...|")"
           gh issue edit "${number}" -b "${body}"
+      - name: Download built packages
+        uses: actions/download-artifact@v3
       - name: Publish packages
         run:
-          gh run download -R makedeb/prebuilt-mpr "${{ github.run_id }}"
-
           for dir in *; do
             component="$(echo "${dir}" | grep -o '^[^-]*')"
 
@@ -224,3 +227,7 @@ jobs:
           fi
           body="$(gh issue view '${{ steps.issue.outputs.NUMBER }}' --json body -q '.body' | sed -e "s|.*Building...|${msg}|"  -e "s|.*Pending publish.*|${msg}|" -e "s|.*Deploying...|${msg}|")"
           gh issue edit "${{ steps.issue.outputs.NUMBER }}" -b "${body}"
+
+          if [[ "${{ needs.publish-pkgs.result }}" == 'success' ]]; then
+            gh issue close "${{ steps.issue.outputs.NUMBER }}"
+          fi
