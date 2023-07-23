@@ -186,7 +186,7 @@ jobs:
       - name: Download built packages
         uses: actions/download-artifact@v3
       - name: Publish packages
-        run:
+        run: |
           for dir in *; do
             component="$(echo "${dir}" | grep -o '^[^-]*')"
 
