@@ -61,8 +61,9 @@ jobs:
             "proget.${{ vars.HW_URL }}/docker/makedeb/makedeb:${{ matrix.target.image-tag }}"
         env:
           SCRIPT: |
-            sudo chown 'makedeb:makedeb' "${HOME}" -R
             export "DEBIAN_FRONTEND=${{ vars.DEBIAN_FRONTEND }}"
+            export CARGO_NET_GIT_FETCH_WITH_CLI=true # workaround for https://github.com/rust-lang/cargo/issues/10583.
+            sudo chown 'makedeb:makedeb' "${HOME}" -R
 
             # Install Prerequisites.
             sudo apt-get update
