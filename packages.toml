@@ -53,6 +53,8 @@ blocked_archs = ["arm64"]
 
 [golang-go]
 
+[golang-go-bin]
+
 [gh]
 
 [glab]
