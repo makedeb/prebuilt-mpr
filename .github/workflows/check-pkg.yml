@@ -20,13 +20,147 @@ jobs:
         with:
           makedeb-repo: false
           pbmpr-repo: true
-      - name: Download Prebuilt-MPR helper binary
-        run: gh release download -p pbmpr
+      - name: Get update targets
+        id: update-targets
+        uses: ./.github/workflows/get-update-targets
+        with:
+          pkgbase: "${{ inputs.pkgbase }}"
+          makedeb_url: "${{ vars.MAKEDEB_URL }}"
+      - name: Configure package updater
+        if: steps.update-targets.outputs.targets != '[]'
+        run: |
+          set -eu
+
+          # Configure Git.
+          git config --global user.name 'Kavplex Bot'
+          git config --global user.email 'kavplex@hunterwittenborn.com'
+
+          # Clone the GitHub and MPR repos.
+          git clone "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}" gh-repo/
+          git clone "https://mpr.${{ vars.MAKEDEB_URL }}/${{ inputs.pkgbase }}" mpr-repo/
+
+          # Get the list of branches on GitHub.
+          cd gh-repo/
+          mapfile -t gh_branches < <(git branch --remote | sed 's| ||g' | sed 's|^origin/||')
+
+          # Create the needed branches on GitHub if they don't exist.
+          pkg_branch="pkg/${{ inputs.pkgbase }}"
+          pkg_update_branch="pkg-update/${{ inputs.pkgbase }}"
+          build_files=('.github/workflows/'{'get-update-targets','build-pkg.yml','publish-pkg.yml'})
+
+          for branch in "${pkg_branch}" "${pkg_update_branch}"; do
+            if ! printf '%s\n' "${gh_branches[@]}" | grep -Fxq "${branch}"; then
+              case "${branch}" in
+                "${pkg_branch}")
+                  git checkout --orphan "${branch}"
+                  # For some reason files from the 'main' branch still persist
+                  # even through '--orphan', so clean them up here.
+                  git rm -r --cached ./
+                  git clean -df
+
+                  # Add the workflow file and commit.
+                  git checkout main "${build_files[@]}"
+                  git commit -m "Update workflow files"
+                  ;;
+                "${pkg_update_branch}")
+                  # Checkout to the 'pkg/{pkg}' branch, and then make
+                  # 'pkg-update/{pkg}' based on it.
+                  git checkout "${pkg_branch}"
+                  git checkout -b "${branch}"
+                  ;;
+              esac
+
+              # Push the branch.
+              git push --set-upstream origin "${branch}"
+            fi
+          done
+
+          # Ensure workflow files are up to date.
+          #
+          # This variable tracks when we should create a new empty commit to trigger a PR run. This
+          # happens in the following circumstances:
+          # 
+          # - Workflow files on the 'pkg/{pkg}' branch have been updated.
+          # - New packaging files haven't been added to 'pkg-update/{pkg}' haven't been added in
+          #   this workflow run.
+          # - A PR hasn't been created in this workflow run.
+          new_pr_run=0
+
+          git checkout "${pkg_branch}"
+          git checkout main "${build_files[@]}"
+
+          if [[ "$(git diff --staged)" != '' ]]; then
+            git add .
+            git commit -m "Update workflow files"
+            git push
+            new_pr_run=1
+          fi
+
+          # Delete all build files from the 'pkg-update/' branch.
+          git checkout "${pkg_update_branch}"
+          find ./ -mindepth 1 -maxdepth 1 -not -path './.git' -not -path './.github' -exec rm -R '{}' \;
+
+          # Checkout the MPR repo to the correct branch and copy the files into this repo.
+          # Also get the package version while we're at it.
+          cd ../mpr-repo
+          tag="$(git tag | grep '^ver/' | sort -V | tail -n 1)"
+          git checkout "${tag}"
+          find ./ -mindepth 1 -maxdepth 1 -type f -not -path ./.SRCINFO -exec cp '{}' '../gh-repo/{}' \;
+          cd ../gh-repo
+
+          # Get the package's version.
+          version="$(curl "https://mpr.${{ vars.MAKEDEB_URL }}/packages-meta-ext-v2.json.gz" | jq -r '.[] | select(.PackageBase=="${{ inputs.pkgbase }}").Version')"
+
+          # If there's any changed files, add them and push.
+          git add .
+          if [[ "$(git diff --staged)" != '' ]]; then
+            git commit -m "Update package version to '${version}'"
+            git push
+            new_pr_run=0
+          fi
+
+          # Find this package's PR, creating it if it doesn't exist yet.
+          pr="$(
+            gh search prs \
+              --repo "${{ github.repository }}" \
+              --state open \
+              --json title,number \
+              --jq '.[] | select(
+                .title=="New Package: `${{ inputs.pkgbase }}`"
+                or .title=="Package Update: `${{ inputs.pkgbase }}`"
+              )'
+          )"
+
+          if [[ "${pr}" == '' ]]; then
+            new_pr_run=0
+
+            # If there's no diff between the 'pkg/{pkg}' and 'pkg-update/{pkg}' branches, then
+            # we're running builds for some architectures with no file changes. We have to have
+            # some kind of commit in order for GitHub to allow PR creation though, so create an
+            # empty commit in that case.
+            if [[ "$(git log ${pkg_branch}..${pkg_update_branch})" == '' ]]; then
+              git commit --allow-empty -m 'Trigger package updates'
+              git push
+            fi
+
+            # If 'PKGBUILD' doesn't exist on 'pkg/{pkg}', then were adding a new package
+            # to the Prebuilt-MPR.
+            if !git show "${pkg_branch}:PKGBUILD" &> /dev/null; then
+              pr_title='New Package: `${{ inputs.pkgbase }}`'
+            else
+              pr_title='Package Update: `${{ inputs.pkgbase }}`'
+            fi
+
+            # TODO: Add '-r makedeb/prebuilt-mpr-reviewers' once we get this code deployed.
+            gh pr create -B "${pkg_branch}" -H "${pkg_update_branch}" -t "${pr_title}" -b '**THIS IS A TESTING PR, DO NOT MERGE IT!**'
+          fi
+
+          # Create a new workflow run (if needed) by creating an empty commit.
+          if (( "${new_pr_run}" )); then
+            git commit --allow-empty -m "Trigger package updates from workflow change on 'pkg/${{ inputs.pkgbase }}' branch"
+            git push
+          fi
+
         env:
-          GITHUB_TOKEN: "${{ github.token }}"
-      - name: Make Prebuilt-MPR helper binary executable
-        run: chmod +x ./pbmpr
-      - name: Run update checks for the specified package
-        run: sudo rm /etc/apt/sources.list.d/* && sudo -E ./pbmpr check-pkg "${{ inputs.pkgbase }}"
-        env:
-          GITHUB_TOKEN: "${{ github.token }}"
+          GITHUB_TOKEN: "${{ secrets.GH_TOKEN_CUSTOM }}"
+          TARGETS: "${{ steps.update-targets.outputs.targets }}"

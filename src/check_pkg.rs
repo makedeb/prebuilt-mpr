@@ -211,7 +211,6 @@ async fn update_pkg(
     }
 
     check_actions_file(&gh_repo, &mut gh_remote, &gh_pkg_branch);
-    check_actions_file(&gh_repo, &mut gh_remote, &gh_pkg_update_branch);
 
     // Checkout the GitHub repository to the correct branch.
     let gh_branch = gh_repo
