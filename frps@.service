@@ -1,0 +1,14 @@
+[Unit]
+Description=Frp Server Service %I
+After=network.target
+
+[Service]
+Type=simple
+DynamicUser=yes
+Restart=on-failure
+RestartSec=5s
+WorkingDirectory=/etc/frp/
+ExecStart=/usr/bin/frps -c /etc/frp/%i.ini
+
+[Install]
+WantedBy=multi-user.target
