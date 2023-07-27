@@ -1,29 +1,25 @@
 [airshipper]
 
 [appimage-builder]
-blocked_archs = ["arm64"]
 
 [bat]
 
 [bats]
 
 [bitwarden-bin]
-blocked_archs = ["arm64"]
 
 [cargo-appimage]
 
 [celeste]
-blocked_distros = ["focal", "bullseye"]
+blocked-distros = ["focal", "bullseye"]
 
 [chezmoi]
 
 [cloudflared]
 
 [cloudflare-warp]
-blocked_archs = ["arm64"]
 
 [code-bin]
-blocked_archs = ["arm64"]
 
 [comb]
 
@@ -32,7 +28,6 @@ blocked_archs = ["arm64"]
 [deno]
 
 [discord]
-blocked_archs = ["arm64"]
 
 [docuum]
 
@@ -45,7 +40,6 @@ blocked_archs = ["arm64"]
 [drone-runner-exec]
 
 [element-desktop-bin]
-blocked_archs = ["arm64"]
 
 [exa]
 
@@ -102,16 +96,18 @@ blocked_archs = ["arm64"]
 [prismlauncher]
 
 [proton-ge-custom-bin]
-blocked_distros = ["bullseye"]
-blocked_archs = ["arm64"]
+blocked-distros = ["bullseye"]
 
 [rclone]
 
 [ripgrep]
 
 [rustc]
+blocked-archs = ["arm64"]
 
 [rustup]
+
+[rustup-init]
 
 [sentry-cli]
 

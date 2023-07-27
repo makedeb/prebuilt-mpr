@@ -14,10 +14,10 @@ jobs:
       - name: Download Prebuilt-MPR helper binary
         run: gh release download -p pbmpr
         env:
-          GH_TOKEN: "${{ github.token }}"
+          GH_TOKEN: "${{ secrets.GH_TOKEN_CUSTOM }}"
       - name: Make Prebuilt-MPR helper binary executable
         run: chmod +x ./pbmpr
       - name: Trigger workflow runs for update checks
         run: ./pbmpr run-checks
         env:
-          GITHUB_TOKEN: "${{ github.token }}"
+          GITHUB_TOKEN: "${{ secrets.GH_TOKEN_CUSTOM }}"
