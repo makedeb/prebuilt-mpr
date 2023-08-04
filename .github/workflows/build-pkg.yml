@@ -1,6 +1,9 @@
 # Build an MPR package.
 name: Build Package
-on: pull_request
+on:
+  pull_request:
+    branches:
+      - pkg/*
 
 jobs:
   get-targets:
