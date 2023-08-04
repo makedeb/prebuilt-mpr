@@ -40,15 +40,10 @@ jobs:
         env:
           PROGET_SERVER: "https://proget.${{ vars.MAKEDEB_URL }}"
           PROGET_TOKEN: "${{ secrets.PROGET_TOKEN }}"
-  report-status:
-    name: Report Status
-    runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
-    needs: publish-pkg
-    steps:
-      - name: Report
+      - name: Report status
+        if: always()
         run: |
-          if [[ "${{ failure() || cancelled() }}" == 'false' ]]; then
+          if [[ "${{ job.status }}" == 'success' ]]; then
             msg='Package publishing has succeeded! :tada:'
           else
             msg=$'Package publishing has failed! :scream:\n\nView the [checks tab](https://github.com/${{ github.repository }}) for more information.'
