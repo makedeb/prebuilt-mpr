@@ -16,7 +16,7 @@ jobs:
           pbmpr-repo: true
       - name: Get update targets
         id: update-targets
-        uses: ./.github/workflows/get-update-targets
+        uses: ${{ github.repository }}/.github/workflows/get-update-targets@${{ github.base_ref }}
         with:
           pkgbase: "${{ inputs.pkgbase }}"
           makedeb_url: "${{ vars.MAKEDEB_URL }}"
