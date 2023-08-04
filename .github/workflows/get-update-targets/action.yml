@@ -13,13 +13,21 @@ outputs:
   targets:
     description: |
       A JSON array, containing objects consisting of:
-      - 'arch' # The architecture that needs updated
-      - 'distro' # The distro that needs updated
-      - 'image-tag' # The image that'll be used to build the package in 'update-pkg.yml'
+      # The architecture the package needs to be built on.
+      - 'arch' # The architecture the package needs to build on.
+      # The architecture that actually needs updated. This would be different
+      # from 'arch' when building for the 'all' architecture, as those packages
+      # need to be built on 'amd64'.
+      - 'display-arch'
+      # The distro that needs updated.
+      - 'distro'
+      # The image that'll be used to build the package in 'update-pkg.yml'.
+      - 'image-tag'
 
       Examples:
-      - [{"arch": "amd64", "distro": "jammy", "image-tag": "ubuntu-jammy"}]
-      - [{"arch": "amd64", "distro": "bullseye", "image-tag": "debian-bullseye"}]
+      - [{"arch": "amd64", "display-arch": "amd64", "distro": "jammy", "image-tag": "ubuntu-jammy"}]
+      - [{"arch": "amd64", "display-arch": "amd64", "distro": "bullseye", "image-tag": "debian-bullseye"}]
+      - [{"arch": "amd64", "display-arch": "all", "distro": "focal", "image-tag": "ubuntu-focal"}]
     value: ${{ steps.list-targets.outputs.TARGETS }}
 
 runs:
@@ -36,15 +44,43 @@ runs:
         set -eo pipefail
         sudo rm /etc/apt/sources.list.d/*
 
+        # Set up needed variables.
+        LATEST_VERSION="$(curl -s 'https://mpr.${{ inputs.makedeb_url }}/packages-meta-ext-v2.json.gz' | jq -r '.[] | select(.PackageBase=="${{ inputs.pkgbase }}").Version')"
         DISTROS=('focal' 'jammy' 'lunar' 'bullseye' 'bookworm')
         ARCHS=('amd64' 'arm64')
         OUTPUT='[]'
-        LATEST_VERSION="$(curl -s 'https://mpr.${{ inputs.makedeb_url }}/packages-meta-ext-v2.json.gz' | jq -r '.[] | select(.PackageBase=="${{ inputs.pkgbase }}").Version')"
 
         if [[ "${LATEST_VERSION}" == '' ]]; then
           echo "::error ::Unable to fetch package version from MPR."
           exit 1
         fi
+
+        # Get the list of architectures we need to build by parsing the package's '.SRCINFO' file.
+        mapfile -t archs < <(curl -s 'https://mpr.${{ inputs.makedeb_url }}/pkgbase/${{ inputs.pkgbase }}/git/raw/.SRCINFO' | grep '^arch = ' | sed 's|^arch = ||')
+        ARCHS=()
+
+        case "${#archs[@]}" in
+          0)
+            echo "::error ::Unable to get package architecture listing from MPR."
+            exit 1
+            ;;
+          1)
+            case "${archs}" in
+              any) ARCHS=('amd64' 'arm64') ;;
+              all) ARCHS=('all') ;;
+              amd64|x86_64) ARCHS=('amd64') ;;
+              arm64|aarch64) ARCHS=('arm64') ;;
+            esac
+            ;;
+          *)
+            for arch in "${archs[@]}"; do
+              case "${arch}" in
+                amd64|x86_64) ARCHS+=('amd64') ;;
+                arm64|aarch64) ARCHS+=('arm64') ;;
+              esac
+            done
+            ;;
+        esac
 
         for distro in "${DISTROS[@]}"; do
           for arch in "${ARCHS[@]}"; do
@@ -68,8 +104,17 @@ runs:
                 bullseye|bookworm) tag="debian-${distro}" ;;
               esac
 
+              if [[ "${arch}" == 'all' ]]; then
+                json_arch='amd64'
+                json_display_arch='all'
+              else
+                json_arch="${arch}"
+                json_display_arch="${arch}"
+              fi
+
               json="{
-                \"arch\": \"${arch}\",
+                \"arch\": \"${json_arch}\",
+                \"display-arch\": \"${json_display_arch}\",
                 \"distro\": \"${distro}\",
                 \"image-tag\": \"${tag}\"
               }"

@@ -28,7 +28,7 @@ jobs:
           pkgbase: "${{ steps.pkgbase.outputs.PKGBASE }}"
           makedeb_url: "${{ vars.MAKEDEB_URL }}"
   update-pkg:
-    name: Build Package (${{ matrix.target.distro }}:${{ matrix.target.arch }})
+    name: Build Package (${{ matrix.target.distro }}:${{ matrix.target.display-arch }})
     runs-on: ubuntu-latest
     needs: get-targets
     strategy:
@@ -148,5 +148,5 @@ jobs:
       - name: Upload built package
         uses: actions/upload-artifact@v3
         with:
-          name: "${{ matrix.target.distro }}-${{ matrix.target.arch }}"
+          name: "${{ matrix.target.distro }}-${{ matrix.target.display-arch }}"
           path: 'pkg/*.deb'
