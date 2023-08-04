@@ -11,13 +11,13 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          ref: "${{ github.base_ref }}"
       - name: Setup Prebuilt-MPR APT repository
         uses: makedeb/setup-makedeb@main
         with:
           makedeb-repo: false
           pbmpr-repo: true
-      - name: Checkout 'get-update-targets' workflow from 'pkg/{pkg}' branch
-        run: git checkout '${{ github.base_ref }}' .github/workflows/get-update-targets
       - name: Get update targets
         id: update-targets
         uses: ./.github/workflows/get-update-targets
