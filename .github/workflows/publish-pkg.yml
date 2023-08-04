@@ -48,7 +48,7 @@ jobs:
     steps:
       - name: Report
         run: |
-          if [[ "${{ failed() || cancelled() }}" == 'true' ]]; then
+          if [[ "${{ failure() || cancelled() }}" == 'false' ]]; then
             msg='Package publishing has succeeded! :tada:'
           else
             msg=$'Package publishing has failed! :scream:\n\nView the [checks tab](https://github.com/${{ github.repository }}) for more information.'
