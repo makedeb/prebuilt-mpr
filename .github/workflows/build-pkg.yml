@@ -9,14 +9,18 @@ jobs:
     outputs:
       targets: ${{ steps.update-targets.outputs.targets }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
       - name: Setup Prebuilt-MPR APT repository
         uses: makedeb/setup-makedeb@main
         with:
           makedeb-repo: false
           pbmpr-repo: true
+      - name: Checkout 'get-update-targets' workflow from 'pkg/{pkg}' branch
+        run: git checkout '${{ github.base_ref }}' .github/workflows/get-update-targets
       - name: Get update targets
         id: update-targets
-        uses: ${{ github.repository }}/.github/workflows/get-update-targets@${{ github.base_ref }}
+        uses: ./.github/workflows/get-update-targets
         with:
           pkgbase: "${{ inputs.pkgbase }}"
           makedeb_url: "${{ vars.MAKEDEB_URL }}"
