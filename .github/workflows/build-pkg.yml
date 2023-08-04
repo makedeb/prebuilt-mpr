@@ -18,11 +18,14 @@ jobs:
         with:
           makedeb-repo: false
           pbmpr-repo: true
+      - name: Get pkgbase
+        id: pkgbase
+        run: echo "${{ github.base_ref }}" | sed 's|^pkg/||' | echo "PKGBASE=$(cat)" >> "${GITHUB_OUTPUT}"
       - name: Get update targets
         id: update-targets
         uses: ./.github/workflows/get-update-targets
         with:
-          pkgbase: "${{ inputs.pkgbase }}"
+          pkgbase: "${{ steps.pkgbase.outputs.PKGBASE }}"
           makedeb_url: "${{ vars.MAKEDEB_URL }}"
   update-pkg:
     name: Build Package (${{ matrix.target.distro }}:${{ matrix.target.arch }})
