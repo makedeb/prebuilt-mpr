@@ -76,6 +76,7 @@ jobs:
         env:
           SCRIPT: |
             export "DEBIAN_FRONTEND=${{ vars.DEBIAN_FRONTEND }}"
+            PKGBASE="${{ steps.pkgbase.outputs.PKGBASE }}"
             export CARGO_NET_GIT_FETCH_WITH_CLI=true # Workaround for https://github.com/rust-lang/cargo/issues/10583.
             sudo chown 'makedeb:makedeb' "${HOME}" -R
 
@@ -90,12 +91,9 @@ jobs:
             sudo apt-get update
 
             # Package-specific changes.
-            # TODO: Remove these 'set -x' lines once we get this figured out.
-            set -x
             case "${PKGBASE}" in
               golang-go) sudo apt-get install golang-go-bin -y ;; # We need this to build golang-go on some older distros.
             esac
-            set +x
 
             # Set up the makedeb config. The stock makedeb config has
             # issues when building on non-amd64 machines. This change
@@ -159,7 +157,6 @@ jobs:
             ) | sudo tee /etc/makepkg.conf 1> /dev/null
 
             makedeb -s --no-confirm --pass-env
-          PKGBASE: "${{ steps.pkgbase.outputs.PKGBASE }}"
       - name: Upload built package
         uses: actions/upload-artifact@v3
         with:
