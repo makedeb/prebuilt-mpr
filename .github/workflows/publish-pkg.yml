@@ -24,6 +24,7 @@ jobs:
         uses: dawidd6/action-download-artifact@v2
         with:
           pr: "${{ github.event.pull_request.number }}"
+          workflow: build-pkg.yml
       - name: Publish packages
         run: |
           for dir in *; do
@@ -46,7 +47,7 @@ jobs:
           if [[ "${{ job.status }}" == 'success' ]]; then
             msg='Package publishing has succeeded! :tada:'
           else
-            msg=$'Package publishing has failed! :scream:\n\nView the [checks tab](https://github.com/${{ github.repository }}) for more information.'
+            msg=$'Package publishing has failed! :scream:\n\nView the [checks tab](https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}/checks) for more information.'
           fi
 
           gh pr comment "${{ github.event.pull_request.number }}"
