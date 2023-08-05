@@ -33,7 +33,7 @@ jobs:
 
             for deb in *; do
               echo "Uploading '${deb}' to '${component}'..."
-              pg upload-deb prebuilt-mpr "${compoent}" "${deb}"
+              pg upload-deb prebuilt-mpr "${component}" "${deb}"
             done
 
             popd
