@@ -61,6 +61,9 @@ jobs:
           # the workspace directory too.
           echo "{\"data-root\":\"${PWD}/docker\"}" | sudo tee /etc/docker/daemon.json 1> /dev/null
           sudo systemctl restart docker
+      - name: Get pkgbase
+        id: pkgbase
+        run: echo "${{ github.base_ref }}" | sed 's|^pkg/||' | echo "PKGBASE=$(cat)" >> "${GITHUB_OUTPUT}"
       - name: Build package
         run: |
           chmod a+rwx pkg/
@@ -73,7 +76,7 @@ jobs:
         env:
           SCRIPT: |
             export "DEBIAN_FRONTEND=${{ vars.DEBIAN_FRONTEND }}"
-            export CARGO_NET_GIT_FETCH_WITH_CLI=true # workaround for https://github.com/rust-lang/cargo/issues/10583.
+            export CARGO_NET_GIT_FETCH_WITH_CLI=true # Workaround for https://github.com/rust-lang/cargo/issues/10583.
             sudo chown 'makedeb:makedeb' "${HOME}" -R
 
             # Install Prerequisites.
@@ -85,6 +88,11 @@ jobs:
             wget -qO - 'https://proget.makedeb.org/debian-feeds/prebuilt-mpr.pub' | gpg --dearmor | sudo tee /usr/share/keyrings/prebuilt-mpr-archive-keyring.gpg 1> /dev/null
             echo "deb [arch=all,$(dpkg --print-architecture) signed-by=/usr/share/keyrings/prebuilt-mpr-archive-keyring.gpg] https://proget.makedeb.org prebuilt-mpr $(lsb_release -cs)" | sudo tee /etc/apt/sources.list.d/prebuilt-mpr.list
             sudo apt-get update
+
+            # Package-specific changes.
+            case "${PKGBASE}" in
+              golang-go) sudo apt-get install golang-go-bin -y ;; # We need this to build golang-go on some older distros.
+            esac
 
             # Set up the makedeb config. The stock makedeb config has
             # issues when building on non-amd64 machines. This change
@@ -148,6 +156,7 @@ jobs:
             ) | sudo tee /etc/makepkg.conf 1> /dev/null
 
             makedeb -s --no-confirm --pass-env
+          PKGBASE: "${{ steps.pkgbase.outputs.PKGBASE }}"
       - name: Upload built package
         uses: actions/upload-artifact@v3
         with:

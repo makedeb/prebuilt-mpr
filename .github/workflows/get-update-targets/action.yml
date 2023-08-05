@@ -106,7 +106,7 @@ runs:
 
         for distro in "${DISTROS[@]}"; do
           # Skip if we're not supposed to build for this distro.
-          if ! printf '%s\n' "${blocked_distros[@]}" | grep -Fq "${distro}"; then
+          if printf '%s\n' "${blocked_distros[@]}" | grep -Fxq "${distro}"; then
             continue
           fi
 
