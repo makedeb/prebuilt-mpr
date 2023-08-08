@@ -1,0 +1,164 @@
+# Build an MPR package.
+name: Build Package
+on:
+  pull_request:
+    branches:
+      - pkg/*
+
+jobs:
+  get-targets:
+    name: Get Targets
+    runs-on: ubuntu-latest
+    outputs:
+      targets: ${{ steps.update-targets.outputs.targets }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          ref: "${{ github.base_ref }}"
+      - name: Setup Prebuilt-MPR APT repository
+        uses: makedeb/setup-makedeb@main
+        with:
+          makedeb-repo: false
+          pbmpr-repo: true
+      - name: Get pkgbase
+        id: pkgbase
+        run: echo "${{ github.base_ref }}" | sed 's|^pkg/||' | echo "PKGBASE=$(cat)" >> "${GITHUB_OUTPUT}"
+      - name: Get update targets
+        id: update-targets
+        uses: ./.github/workflows/get-update-targets
+        with:
+          pkgbase: "${{ steps.pkgbase.outputs.PKGBASE }}"
+          makedeb_url: "${{ vars.MAKEDEB_URL }}"
+  update-pkg:
+    name: Build Package (${{ matrix.target.distro }}:${{ matrix.target.display-arch }})
+    runs-on: ubuntu-latest
+    needs: get-targets
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJson(needs.get-targets.outputs.targets) }}
+    steps:
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+          remove-docker-images: 'true'
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          path: pkg
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker config
+        run: |
+          # The 'Maximize build space' step only makes the extra storage
+          # available to our workspace directory. Our Docker container
+          # will produce a lot of storage, so store all of that stuff in
+          # the workspace directory too.
+          echo "{\"data-root\":\"${PWD}/docker\"}" | sudo tee /etc/docker/daemon.json 1> /dev/null
+          sudo systemctl restart docker
+      - name: Get pkgbase
+        id: pkgbase
+        run: echo "${{ github.base_ref }}" | sed 's|^pkg/||' | echo "PKGBASE=$(cat)" >> "${GITHUB_OUTPUT}"
+      - name: Build package
+        run: |
+          chmod a+rwx pkg/
+          cd pkg/
+          echo "${SCRIPT}" | docker run \
+            -i \
+            -v "${PWD}:/home/makedeb" \
+            --platform "linux/${{ matrix.target.arch }}" \
+            "proget.${{ vars.HW_URL }}/docker/makedeb/makedeb:${{ matrix.target.image-tag }}"
+        env:
+          SCRIPT: |
+            export "DEBIAN_FRONTEND=${{ vars.DEBIAN_FRONTEND }}"
+            PKGBASE="${{ steps.pkgbase.outputs.PKGBASE }}"
+            export CARGO_NET_GIT_FETCH_WITH_CLI=true # Workaround for https://github.com/rust-lang/cargo/issues/10583.
+            sudo chown 'makedeb:makedeb' "${HOME}" -R
+
+            # Install Prerequisites.
+            sudo apt-get update
+            sudo -E apt-get install git gpg locales-all wget -y
+            export LANG='en_US.UTF-8'
+
+            # Set up the Prebuilt-MPR.
+            wget -qO - 'https://proget.makedeb.org/debian-feeds/prebuilt-mpr.pub' | gpg --dearmor | sudo tee /usr/share/keyrings/prebuilt-mpr-archive-keyring.gpg 1> /dev/null
+            echo "deb [arch=all,$(dpkg --print-architecture) signed-by=/usr/share/keyrings/prebuilt-mpr-archive-keyring.gpg] https://proget.makedeb.org prebuilt-mpr $(lsb_release -cs)" | sudo tee /etc/apt/sources.list.d/prebuilt-mpr.list
+            sudo apt-get update
+
+            # Package-specific changes.
+            case "${PKGBASE}" in
+              golang-go) sudo apt-get install golang-go-bin -y ;; # We need this to build golang-go on some older distros.
+            esac
+
+            # Set up the makedeb config. The stock makedeb config has
+            # issues when building on non-amd64 machines. This change
+            # fixes that until a fix is implemented in makedeb.
+            (
+            cat << EOF
+            CARCH="$(uname -m)"
+            DLAGENTS=(
+              'file::/usr/bin/curl -gqC - -o %o %u'
+              'ftp::/usr/bin/curl -gqfC - --ftp-pasv --retry 3 --retry-delay 3 -o %o %u'
+              'http::/usr/bin/curl -gqb "" -fLC - --retry 3 --retry-delay 3 -o %o %u'
+              'https::/usr/bin/curl -gqb "" -fLC - --retry 3 --retry-delay 3 -o %o %u'
+              'rsync::/usr/bin/rsync --no-motd -z %u %o'
+              'scp::/usr/bin/scp -C %u %o'
+            )
+            VCSCLIENTS=(
+              'bzr::bzr'
+              'fossil::fossil'
+              'git::git'
+              'hg::mercurial'
+              'svn::subversion'
+            )
+            BUILDENV=(
+              '!distcc'
+              'color'
+              '!ccache'
+              'check'
+              '!sign'
+            )
+            OPTIONS=(
+              'strip'
+              'docs'
+              '!libtool'
+              '!staticlibs'
+              'emptydirs'
+              'zipman'
+              'purge'
+              '!debug'
+              '!lto'
+            )
+            INTEGRITY_CHECK=(sha256)
+            STRIP_BINARIES="--strip-all"
+            STRIP_SHARED="--strip-unneeded"
+            STRIP_STATIC="--strip-debug"
+            MAN_DIRS=({usr{,/local}{,/share},opt/*}/{man,info})
+            DOC_DIRS=(usr/{,local/}{,share/}{doc,gtk-doc} opt/*/{doc,gtk-doc})
+            PURGE_TARGETS=(usr/{,share}/info/dir .packlist *.pod)
+            DBGSRCDIR="/usr/src/debug"
+            COMPRESSGZ=(gzip -c -f -n)
+            COMPRESSBZ2=(bzip2 -c -f)
+            COMPRESSXZ=(xz -c -z -)
+            COMPRESSZST=(zstd -c -z -q -)
+            COMPRESSLRZ=(lrzip -q)
+            COMPRESSLZO=(lzop -q)
+            COMPRESSZ=(compress -c -f)
+            COMPRESSLZ4=(lz4 -q)
+            COMPRESSLZ=(lzip -c -f)
+            PKGEXT='.pkg.tar.zst'
+            SRCEXT='.src.tar.gz'
+            EOF
+            ) | sudo tee /etc/makepkg.conf 1> /dev/null
+
+            makedeb -s --no-confirm --pass-env
+      - name: Upload built package
+        uses: actions/upload-artifact@v3
+        with:
+          name: "${{ matrix.target.distro }}-${{ matrix.target.display-arch }}"
+          path: 'pkg/*.deb'
