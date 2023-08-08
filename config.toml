@@ -1,6 +1,11 @@
 changelog-seen = 2
 
 [llvm]
+# This makes builds quicker, which is beneficial for the already long Rust
+# builds.
+#
+# Disable this if you want to build LLVM for whatever reason.
+download-ci-llvm = "if-available"
 
 [build]
 extended = true
