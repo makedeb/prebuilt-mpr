@@ -108,6 +108,7 @@ jobs:
                 sudo apt-get install rustup-init -y
                 rustup-init -y
                 source "${HOME}/.cargo/env"
+                ;;
             esac
 
             # Set up the makedeb config. The stock makedeb config has
