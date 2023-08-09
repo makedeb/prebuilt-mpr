@@ -104,7 +104,7 @@ jobs:
                 # so install the rust toolchain manually and use that.
                 #
                 # See https://github.com/makedeb/prebuilt-mpr/issues/247.
-                makedeb_args=+=('-d')
+                makedeb_args+=('-d')
                 sudo apt-get install rustup-init -y
                 rustup-init -y
                 source "${HOME}/.cargo/env"
