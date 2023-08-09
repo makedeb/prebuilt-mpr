@@ -1,10 +1,10 @@
 # Maintainer: Hunter Wittenborn <hunter@hunterwittenborn.com>
 pkgname=just
 pkgver=1.14.0
-pkgrel=1
+pkgrel=2
 pkgdesc='Just a command runner'
 arch=('any')
-makedepends=('cargo')
+makedepends=('cargo>=1.63')
 license=('CC0-1.0')
 url='https://just.systems'
 
