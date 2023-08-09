@@ -1,0 +1,18 @@
+diff --unified --recursive --text package.orig/libraries/libnbtplusplus/include/tag_primitive.h package.new/libraries/libnbtplusplus/include/tag_primitive.h
+--- package.orig/libraries/libnbtplusplus/include/tag_primitive.h	2023-07-29 07:27:41.045212463 +0000
++++ package.new/libraries/libnbtplusplus/include/tag_primitive.h	2023-07-29 07:28:19.127613449 +0000
+@@ -77,14 +77,6 @@
+ typedef tag_primitive<float> tag_float;
+ typedef tag_primitive<double> tag_double;
+ 
+-//Explicit instantiations
+-template class NBT_EXPORT tag_primitive<int8_t>;
+-template class NBT_EXPORT tag_primitive<int16_t>;
+-template class NBT_EXPORT tag_primitive<int32_t>;
+-template class NBT_EXPORT tag_primitive<int64_t>;
+-template class NBT_EXPORT tag_primitive<float>;
+-template class NBT_EXPORT tag_primitive<double>;
+-
+ template<class T>
+ void tag_primitive<T>::read_payload(io::stream_reader& reader)
+ {
