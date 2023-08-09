@@ -54,6 +54,14 @@ runs:
           fi
         )
 
+        mapfile -t blocked_archs < <(
+          output="$(echo "${pkg_list}" | jq '.["${{ inputs.pkgbase }}"]["blocked-archs"]')"
+
+          if [[ "${output}" != 'null' ]]; then
+            echo "${output}" | jq -r '.[]'
+          fi
+        )
+
         # If we're packaging for `dasel` we have to uninstall it, as it'll mess with our checks below otherwise.
         if [[ "${{ inputs.pkgbase }}" == 'dasel' ]]; then
           sudo apt-get uninstall dasel -y
@@ -111,6 +119,11 @@ runs:
           fi
 
           for arch in "${ARCHS[@]}"; do
+            # Skip if we're not supposed to build for this architecture.
+            if printf '%s\n' "${blocked_archs[@]}" | grep -Fxq "${arch}"; then
+              continue
+            fi
+
             echo "Checking '${distro}:${arch}' for updates..."
             echo "deb [arch=all,${arch} signed-by=/usr/share/keyrings/prebuilt-mpr-archive-keyring.gpg] https://proget.${{ inputs.makedeb_url }} prebuilt-mpr ${distro}" | sudo tee /etc/apt/sources.list 1> /dev/null
             
