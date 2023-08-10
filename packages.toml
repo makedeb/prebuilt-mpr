@@ -11,7 +11,7 @@
 [cargo-appimage]
 
 [celeste]
-blocked-distros = ["focal", "bullseye"]
+blocked-distros = ["focal", "jammy", "bullseye"]
 
 [chezmoi]
 
