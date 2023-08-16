@@ -1,0 +1,175 @@
+# Get the needed update targets of an MPR package.
+name: "Get Update Targets"
+inputs:
+  pkgbase:
+    type: string
+    description: "The MPR package to check"
+    required: true
+  makedeb_url:
+    type: string
+    description: "The URL for makedeb (makedeb.org currently). This is passed as an input as GitHub composite actions aren't able to use the 'vars' context."
+    required: true
+outputs:
+  targets:
+    description: |
+      A JSON array, containing objects consisting of:
+      # The architecture the package needs to be built on.
+      - 'arch' # The architecture the package needs to build on.
+      # The architecture that actually needs updated. This would be different
+      # from 'arch' when building for the 'all' architecture, as those packages
+      # need to be built on 'amd64'.
+      - 'display-arch'
+      # The distro that needs updated.
+      - 'distro'
+      # The image that'll be used to build the package in 'update-pkg.yml'.
+      - 'image-tag'
+
+      Examples:
+      - [{"arch": "amd64", "display-arch": "amd64", "distro": "jammy", "image-tag": "ubuntu-jammy"}]
+      - [{"arch": "amd64", "display-arch": "amd64", "distro": "bullseye", "image-tag": "debian-bullseye"}]
+      - [{"arch": "amd64", "display-arch": "all", "distro": "focal", "image-tag": "ubuntu-focal"}]
+    value: ${{ steps.list-targets.outputs.TARGETS }}
+
+runs:
+  using: composite
+  steps:
+    - name: Get list of targets
+      id: list-targets
+      shell: bash
+      run: |
+        # Convert the packages listing into JSON.
+        sudo apt-get install dasel -y
+        pkg_list="$(curl -L 'https://github.com/makedeb/prebuilt-mpr/raw/main/packages.toml' | dasel -r toml -w json)"
+
+        if [[ "${pkg_list}" == '{}' ]]; then
+          echo "::error ::Unable to get package listing from GitHub repository."
+          exit 1
+        fi
+
+        mapfile -t blocked_distros < <(
+          output="$(echo "${pkg_list}" | jq '.["${{ inputs.pkgbase }}"]["blocked-distros"]')"
+
+          if [[ "${output}" != 'null' ]]; then
+            echo "${output}" | jq -r '.[]'
+          fi
+        )
+
+        mapfile -t blocked_archs < <(
+          output="$(echo "${pkg_list}" | jq '.["${{ inputs.pkgbase }}"]["blocked-archs"]')"
+
+          if [[ "${output}" != 'null' ]]; then
+            echo "${output}" | jq -r '.[]'
+          fi
+        )
+
+        # If we're packaging for `dasel` we have to uninstall it, as it'll mess with our checks below otherwise.
+        if [[ "${{ inputs.pkgbase }}" == 'dasel' ]]; then
+          sudo apt-get uninstall dasel -y
+        fi
+
+        # We overwrite files in /etc/apt during this, so backup the directory for restoration after we're done.
+        tmpdir="$(mktemp -d)"
+        cp /etc/apt/* "${tmpdir}" -R
+
+        set -eo pipefail
+        sudo rm /etc/apt/sources.list.d/*
+
+        # Set up needed variables.
+        LATEST_VERSION="$(curl -s 'https://mpr.${{ inputs.makedeb_url }}/packages-meta-ext-v2.json.gz' | jq -r '.[] | select(.PackageBase=="${{ inputs.pkgbase }}").Version')"
+        DISTROS=('focal' 'jammy' 'lunar' 'bullseye' 'bookworm')
+        ARCHS=('amd64' 'arm64')
+        OUTPUT='[]'
+
+        if [[ "${LATEST_VERSION}" == '' ]]; then
+          echo "::error ::Unable to fetch package version from MPR."
+          exit 1
+        fi
+
+        # Get the list of architectures we need to build by parsing the package's '.SRCINFO' file.
+        mapfile -t archs < <(curl -s 'https://mpr.${{ inputs.makedeb_url }}/pkgbase/${{ inputs.pkgbase }}/git/raw/.SRCINFO' | grep '^arch = ' | sed 's|^arch = ||')
+        ARCHS=()
+
+        case "${#archs[@]}" in
+          0)
+            echo "::error ::Unable to get package architecture listing from MPR."
+            exit 1
+            ;;
+          1)
+            case "${archs}" in
+              any) ARCHS=('amd64' 'arm64') ;;
+              all) ARCHS=('all') ;;
+              amd64|x86_64) ARCHS=('amd64') ;;
+              arm64|aarch64) ARCHS=('arm64') ;;
+            esac
+            ;;
+          *)
+            for arch in "${archs[@]}"; do
+              case "${arch}" in
+                amd64|x86_64) ARCHS+=('amd64') ;;
+                arm64|aarch64) ARCHS+=('arm64') ;;
+              esac
+            done
+            ;;
+        esac
+
+        for distro in "${DISTROS[@]}"; do
+          # Skip if we're not supposed to build for this distro.
+          if printf '%s\n' "${blocked_distros[@]}" | grep -Fxq "${distro}"; then
+            continue
+          fi
+
+          for arch in "${ARCHS[@]}"; do
+            # Skip if we're not supposed to build for this architecture.
+            if printf '%s\n' "${blocked_archs[@]}" | grep -Fxq "${arch}"; then
+              continue
+            fi
+
+            echo "Checking '${distro}:${arch}' for updates..."
+            echo "deb [arch=all,${arch} signed-by=/usr/share/keyrings/prebuilt-mpr-archive-keyring.gpg] https://proget.${{ inputs.makedeb_url }} prebuilt-mpr ${distro}" | sudo tee /etc/apt/sources.list 1> /dev/null
+            
+            if ! output="$(sudo apt-get update 2>&1)"; then
+              echo "${output}"
+              echo "Failed to check '${distro}:${arch}' for updates."
+              exit 1
+            fi
+
+            # The package lines.
+            mapfile -t apt_output < <(apt list '${{ inputs.pkgbase }}' 2> /dev/null | grep '^[a-z/]* ')
+
+            apt_version="$(echo "${apt_output[0]}" | awk '{print $2}')"
+
+            if [[ "${apt_version}" != "${LATEST_VERSION}" ]]; then
+              case "${distro}" in
+                focal|jammy|lunar) tag="ubuntu-${distro}" ;;
+                bullseye|bookworm) tag="debian-${distro}" ;;
+              esac
+
+              if [[ "${arch}" == 'all' ]]; then
+                json_arch='amd64'
+                json_display_arch='all'
+              else
+                json_arch="${arch}"
+                json_display_arch="${arch}"
+              fi
+
+              json="{
+                \"arch\": \"${json_arch}\",
+                \"display-arch\": \"${json_display_arch}\",
+                \"distro\": \"${distro}\",
+                \"image-tag\": \"${tag}\"
+              }"
+              OUTPUT="$(echo "${OUTPUT}" | jq -c ". += [${json}]")"
+            fi
+          done
+        done
+
+        # Restore APT directory and cache.
+        echo "Restoring APT cache to previous state..."
+        sudo cp "${tmpdir}"/* /etc/apt/ -R
+        if ! output="$(sudo apt-get update 2>&1)"; then
+          echo "${output}"
+          echo "Failed to restore APT cache."
+          exit 1
+        fi
+
+        echo "TARGETS=${OUTPUT}" >> "${GITHUB_OUTPUT}"
