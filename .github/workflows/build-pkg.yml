@@ -90,6 +90,12 @@ jobs:
             echo "deb [arch=all,$(dpkg --print-architecture) signed-by=/usr/share/keyrings/prebuilt-mpr-archive-keyring.gpg] https://proget.makedeb.org prebuilt-mpr $(lsb_release -cs)" | sudo tee /etc/apt/sources.list.d/prebuilt-mpr.list
             sudo apt-get update
 
+            # Set up potentially needed packages.
+            # In general we want to avoid installing anything not needed, but
+            # some packages require setup before they can be used.
+            sudo apt-get install rustup -y
+            rustup update stable
+
             # The args we pass to makedeb.
             makedeb_args=('makedeb' '-s' '--no-confirm' '--pass-env')
 
@@ -98,6 +104,10 @@ jobs:
               golang-go)
                 # We need this to build golang-go on some older distros.
                 sudo apt-get install golang-go-bin -y
+                ;;
+              prismlauncher)
+                # Workaround for https://github.com/makedeb/prebuilt-mpr/pull/147#issuecomment-1604226684.
+                sudo apt-get install ca-certificates-java -y
                 ;;
               rustup)
                 # We don't build 'rustc' for all available architectures,
