@@ -28,3 +28,5 @@ jobs:
             gh workflow run check-pkg.yml -F "pkgbase=${pkgbase}"
             sleep 0.5
           done
+        env:
+          GH_TOKEN: "${{ github.token }}"
