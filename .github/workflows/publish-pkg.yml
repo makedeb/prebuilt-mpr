@@ -25,6 +25,7 @@ jobs:
         with:
           pr: "${{ github.event.pull_request.number }}"
           workflow: build-pkg.yml
+          workflow_conclusion: ""
       - name: Publish packages
         run: |
           for dir in *; do
