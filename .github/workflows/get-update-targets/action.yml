@@ -37,6 +37,36 @@ runs:
       id: list-targets
       shell: bash
       run: |
+        # Convert the packages listing into JSON.
+        sudo apt-get install dasel -y
+        pkg_list="$(curl -L 'https://github.com/makedeb/prebuilt-mpr/raw/main/packages.toml' | dasel -r toml -w json)"
+
+        if [[ "${pkg_list}" == '{}' ]]; then
+          echo "::error ::Unable to get package listing from GitHub repository."
+          exit 1
+        fi
+
+        mapfile -t blocked_distros < <(
+          output="$(echo "${pkg_list}" | jq '.["${{ inputs.pkgbase }}"]["blocked-distros"]')"
+
+          if [[ "${output}" != 'null' ]]; then
+            echo "${output}" | jq -r '.[]'
+          fi
+        )
+
+        mapfile -t blocked_archs < <(
+          output="$(echo "${pkg_list}" | jq '.["${{ inputs.pkgbase }}"]["blocked-archs"]')"
+
+          if [[ "${output}" != 'null' ]]; then
+            echo "${output}" | jq -r '.[]'
+          fi
+        )
+
+        # If we're packaging for `dasel` we have to uninstall it, as it'll mess with our checks below otherwise.
+        if [[ "${{ inputs.pkgbase }}" == 'dasel' ]]; then
+          sudo apt-get uninstall dasel -y
+        fi
+
         # We overwrite files in /etc/apt during this, so backup the directory for restoration after we're done.
         tmpdir="$(mktemp -d)"
         cp /etc/apt/* "${tmpdir}" -R
@@ -83,7 +113,17 @@ runs:
         esac
 
         for distro in "${DISTROS[@]}"; do
+          # Skip if we're not supposed to build for this distro.
+          if printf '%s\n' "${blocked_distros[@]}" | grep -Fxq "${distro}"; then
+            continue
+          fi
+
           for arch in "${ARCHS[@]}"; do
+            # Skip if we're not supposed to build for this architecture.
+            if printf '%s\n' "${blocked_archs[@]}" | grep -Fxq "${arch}"; then
+              continue
+            fi
+
             echo "Checking '${distro}:${arch}' for updates..."
             echo "deb [arch=all,${arch} signed-by=/usr/share/keyrings/prebuilt-mpr-archive-keyring.gpg] https://proget.${{ inputs.makedeb_url }} prebuilt-mpr ${distro}" | sudo tee /etc/apt/sources.list 1> /dev/null
             

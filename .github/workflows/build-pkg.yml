@@ -61,6 +61,9 @@ jobs:
           # the workspace directory too.
           echo "{\"data-root\":\"${PWD}/docker\"}" | sudo tee /etc/docker/daemon.json 1> /dev/null
           sudo systemctl restart docker
+      - name: Get pkgbase
+        id: pkgbase
+        run: echo "${{ github.base_ref }}" | sed 's|^pkg/||' | echo "PKGBASE=$(cat)" >> "${GITHUB_OUTPUT}"
       - name: Build package
         run: |
           chmod a+rwx pkg/
@@ -73,7 +76,8 @@ jobs:
         env:
           SCRIPT: |
             export "DEBIAN_FRONTEND=${{ vars.DEBIAN_FRONTEND }}"
-            export CARGO_NET_GIT_FETCH_WITH_CLI=true # workaround for https://github.com/rust-lang/cargo/issues/10583.
+            PKGBASE="${{ steps.pkgbase.outputs.PKGBASE }}"
+            export CARGO_NET_GIT_FETCH_WITH_CLI=true # Workaround for https://github.com/rust-lang/cargo/issues/10583.
             sudo chown 'makedeb:makedeb' "${HOME}" -R
 
             # Install Prerequisites.
@@ -85,6 +89,37 @@ jobs:
             wget -qO - 'https://proget.makedeb.org/debian-feeds/prebuilt-mpr.pub' | gpg --dearmor | sudo tee /usr/share/keyrings/prebuilt-mpr-archive-keyring.gpg 1> /dev/null
             echo "deb [arch=all,$(dpkg --print-architecture) signed-by=/usr/share/keyrings/prebuilt-mpr-archive-keyring.gpg] https://proget.makedeb.org prebuilt-mpr $(lsb_release -cs)" | sudo tee /etc/apt/sources.list.d/prebuilt-mpr.list
             sudo apt-get update
+
+            # Set up potentially needed packages.
+            # In general we want to avoid installing anything not needed, but
+            # some packages require setup before they can be used.
+            sudo apt-get install rustup -y
+            rustup update stable
+
+            # The args we pass to makedeb.
+            makedeb_args=('makedeb' '-s' '--no-confirm' '--pass-env')
+
+            # Package-specific changes.
+            case "${PKGBASE}" in
+              golang-go)
+                # We need this to build golang-go on some older distros.
+                sudo apt-get install golang-go-bin -y
+                ;;
+              prismlauncher)
+                # Workaround for https://github.com/makedeb/prebuilt-mpr/pull/147#issuecomment-1604226684.
+                sudo apt-get install ca-certificates-java -y
+                ;;
+              rustup)
+                # We don't build 'rustc' for all available architectures,
+                # so install the rust toolchain manually and use that.
+                #
+                # See https://github.com/makedeb/prebuilt-mpr/issues/247.
+                makedeb_args+=('-d')
+                sudo apt-get install rustup-init -y
+                rustup-init -y
+                source "${HOME}/.cargo/env"
+                ;;
+            esac
 
             # Set up the makedeb config. The stock makedeb config has
             # issues when building on non-amd64 machines. This change
@@ -147,7 +182,7 @@ jobs:
             EOF
             ) | sudo tee /etc/makepkg.conf 1> /dev/null
 
-            makedeb -s --no-confirm --pass-env
+            "${makedeb_args[@]}"
       - name: Upload built package
         uses: actions/upload-artifact@v3
         with:

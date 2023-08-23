@@ -25,6 +25,7 @@ jobs:
         with:
           pr: "${{ github.event.pull_request.number }}"
           workflow: build-pkg.yml
+          workflow_conclusion: ""
       - name: Publish packages
         run: |
           for dir in *; do
@@ -50,6 +51,6 @@ jobs:
             msg=$'Package publishing has failed! :scream:\n\nView the [checks tab](https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}/checks) for more information.'
           fi
 
-          gh pr comment "${{ github.event.pull_request.number }}"
+          gh -R "${{ github.repository }}" pr comment "${{ github.event.pull_request.number }}" -b "${msg}"
         env:
           GITHUB_TOKEN: "${{ secrets.GH_TOKEN_CUSTOM }}"
