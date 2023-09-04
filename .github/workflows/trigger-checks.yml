@@ -3,6 +3,7 @@ name: Trigger Checks
 on:
   schedule:
     - cron: '*/10 * * * *'
+  workflow_dispatch:
 
 jobs:
   trigger-checks:
