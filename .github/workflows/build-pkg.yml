@@ -13,7 +13,7 @@ jobs:
       targets: ${{ steps.update-targets.outputs.targets }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: "${{ github.base_ref }}"
       - name: Setup Prebuilt-MPR APT repository
@@ -48,7 +48,7 @@ jobs:
           remove-codeql: 'true'
           remove-docker-images: 'true'
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: pkg
       - name: Set up QEMU
