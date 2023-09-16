@@ -72,7 +72,7 @@ jobs:
             -i \
             -v "${PWD}:/home/makedeb" \
             --platform "linux/${{ matrix.target.arch }}" \
-            "proget.${{ vars.HW_URL }}/docker/makedeb/makedeb:${{ matrix.target.image-tag }}"
+            "ghcr.io/makedeb/makedeb:${{ matrix.target.image-tag }}"
         env:
           SCRIPT: |
             export "DEBIAN_FRONTEND=${{ vars.DEBIAN_FRONTEND }}"
