@@ -119,6 +119,8 @@ blocked-archs = ["arm64"]
 
 [tokei]
 
+[woeusb-ng]
+
 [xtr]
 
 [zoxide]
