@@ -1,7 +1,7 @@
 # Maintainer: Hunter Wittenborn <hunter@hunterwittenborn.com>
 pkgname=woeusb-ng
 pkgver=0.2.10
-pkgrel=2
+pkgrel=3
 pkgdesc='Simple tool that enables you to create your own USB stick Windows installer'
 arch=('any')
 depends=(
@@ -11,6 +11,7 @@ depends=(
     'ntfs-3g'
     'p7zip-full'
     'parted'
+    'python3-setuptools'
     'python3-termcolor'
     'python3-wxgtk4.0'
 )
