@@ -107,8 +107,6 @@ jobs:
           # Checkout the MPR repo to the correct branch and copy the files into this repo.
           # Also get the package version while we're at it.
           cd ../mpr-repo
-          tag="$(git tag | grep '^ver/' | sort -V | tail -n 1)"
-          git checkout "${tag}"
           find ./ -mindepth 1 -maxdepth 1 -type f -not -path ./.SRCINFO -exec cp '{}' '../gh-repo/{}' \;
           cd ../gh-repo
 
