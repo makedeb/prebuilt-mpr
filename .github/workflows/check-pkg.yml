@@ -31,6 +31,10 @@ jobs:
         run: |
           set -eu
 
+          if [[ "${{ runner.debug }}" == '1' ]]; then
+            set -x
+          fi
+
           # Configure Git.
           git config --global user.name 'Kavplex Bot'
           git config --global user.email 'kavplex@hunterwittenborn.com'
