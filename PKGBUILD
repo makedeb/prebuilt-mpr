@@ -3,12 +3,12 @@
 # Contributor: lordpipe <lordpipe@protonmail.com>
 
 pkgname=prismlauncher
-pkgver=7.2
-pkgrel=5
+pkgver=8.0
+pkgrel=1
 pkgdesc='Minecraft launcher with ability to manage multiple instances.'
 arch=('i386' 'amd64' 'arm64' 'armhf' 'riscv64')
 url='https://prismlauncher.org'
-license=('GPL3')
+license=('GPL-3')
 depends=('libqt5svg5' 'qt5-image-formats-plugins' 'libqt5xml5' 'libqt5core5a' 'libqt5network5' 'libqt5gui5')
 makedepends=('scdoc' 'extra-cmake-modules' 'cmake' 'git' 'openjdk-17-jdk' 'zlib1g-dev' 'libgl1-mesa-dev' 'qtbase5-dev' 'qtchooser' 'qt5-qmake' 'qtbase5-dev-tools' 'gcc' 'g++')
 optdepends=('java-runtime=17: support for Minecraft versions >= 1.17'
@@ -17,9 +17,11 @@ optdepends=('java-runtime=17: support for Minecraft versions >= 1.17'
             's!flite: narrator support'
             's!x11-xserver-utils: xrandr is needed to support Minecraft versions <= 1.12')
 source=("https://github.com/PrismLauncher/PrismLauncher/releases/download/$pkgver/PrismLauncher-$pkgver.tar.gz"
-        'gcc-armv7-fix.patch')
-sha256sums=('5733b55c4532286813a6fb7de2f3a38e6f6db743a251919c8b646d32a84514b4'
-            '42394447d4b52c9329ff45f3c700c0eb2090a5803c5de010587d64294c37420f')
+        'gcc-armv7-fix.patch'
+        'copyright')
+sha256sums=('462f35eeda6e107b5f23a97500accf43e4227a0fb40145b29d0895bcfe3372b0'
+            '42394447d4b52c9329ff45f3c700c0eb2090a5803c5de010587d64294c37420f'
+            '55f14ca1c20ba05785b248b3454ce2671149112d6b7c1a4e4fd24f4dde8f4c71')
 
 # allow for ARM support
 #TODO: makedeb's hard-coding for x86-64 has been fixed in a future makedeb version
@@ -35,24 +37,24 @@ CXXFLAGS=${CXXFLAGS/-fcf-protection/}
 
 # if the user hasn't specified a tuning/architecture, specify our own minimal defaults to cover the earliest CPUs
 if [[ ${CFLAGS} != *"-mtune"* && ${CFLAGS} != *"-march"* ]]; then
-    case "$(uname -m)" in
-        x86_64)
+    case "$CARCH" in
+        amd64)
             CFLAGS+=" -march=x86-64 -mtune=generic -fcf-protection"
             CXXFLAGS+=" -march=x86-64 -mtune=generic -fcf-protection"
             ;;
-        i686)
+        i386)
             CFLAGS+=" -march=i686 -mtune=generic"
             CXXFLAGS+=" -march=i686 -mtune=generic"
             ;;
-        aarch64*|armv8*|armv9*|arm64*)
+        arm64)
             CFLAGS+=" -march=armv8-a -mtune=generic"
             CXXFLAGS+=" -march=armv8-a -mtune=generic"
             ;;
-        arm*)
+        armhf)
             CFLAGS+=" -march=armv7-a+fp"
             CXXFLAGS+=" -march=armv7-a+fp"
             ;;
-        riscv64*)
+        riscv64)
             CFLAGS+=" -march=rv64imafdc"
             CXXFLAGS+=" -march=rv64imafdc"
             ;;
@@ -90,4 +92,6 @@ check() {
 package() {
     cd "${srcdir}/PrismLauncher-$pkgver/build"
     DESTDIR="$pkgdir" cmake --install .
+    mkdir -p "${pkgdir}/usr/share/doc/$pkgname"
+    cp -v "${srcdir}/copyright" "${pkgdir}/usr/share/doc/$pkgname/copyright"
 }
