@@ -76,7 +76,7 @@ runs:
 
         # Set up needed variables.
         LATEST_VERSION="$(curl -s 'https://mpr.${{ inputs.makedeb_url }}/packages-meta-ext-v2.json.gz' | jq -r '.[] | select(.PackageBase=="${{ inputs.pkgbase }}").Version')"
-        DISTROS=('focal' 'jammy' 'lunar' 'bullseye' 'bookworm')
+        DISTROS=('focal' 'jammy' 'lunar' 'mantic' 'bullseye' 'bookworm')
         ARCHS=('amd64' 'arm64')
         OUTPUT='[]'
 
@@ -127,7 +127,12 @@ runs:
             echo "Checking '${distro}:${arch}' for updates..."
             echo "deb [arch=all,${arch} signed-by=/usr/share/keyrings/prebuilt-mpr-archive-keyring.gpg] https://proget.${{ inputs.makedeb_url }} prebuilt-mpr ${distro}" | sudo tee /etc/apt/sources.list 1> /dev/null
             
-            if ! output="$(sudo apt-get update 2>&1)"; then
+            # Abort if we get a bad exit code or we have an 'Err:' line in
+            # APT's output.
+            #
+            # For some reason even when 'Err:' lines are contained, APT still
+            # doesn't send a non-zero exit code. So handle that as well.
+            if ! output="$(sudo apt-get update 2>&1)" || (echo "${output}" | grep -q 'Err:'); then
               echo "${output}"
               echo "Failed to check '${distro}:${arch}' for updates."
               exit 1
@@ -140,7 +145,7 @@ runs:
 
             if [[ "${apt_version}" != "${LATEST_VERSION}" ]]; then
               case "${distro}" in
-                focal|jammy|lunar) tag="ubuntu-${distro}" ;;
+                focal|jammy|lunar|mantic) tag="ubuntu-${distro}" ;;
                 bullseye|bookworm) tag="debian-${distro}" ;;
               esac
 
