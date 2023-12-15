@@ -1,6 +1,6 @@
 # Maintainer: Hunter Wittenborn <hunter@hunterwittenborn.com>
 pkgname=golang-go
-pkgver=1.20.5
+pkgver=1.21.5
 pkgrel=1
 epoch=2
 pkgdesc='The Go programming language'
@@ -8,7 +8,7 @@ arch=('any')
 optdepends=('r!g++' 'r!gcc' 'r!libc6-dev' 'r!pkg-config')
 makedepends=('gcc' 'golang-go')
 url='https://go.dev'
-options=('!strip')
+extensions=()
 preinst='./preinst'
 
 source=("${url}/dl/go${pkgver}.src.tar.gz")
