@@ -13,7 +13,7 @@ jobs:
       targets: ${{ steps.update-targets.outputs.targets }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: "${{ github.base_ref }}"
       - name: Setup Prebuilt-MPR APT repository
@@ -48,11 +48,11 @@ jobs:
           remove-codeql: 'true'
           remove-docker-images: 'true'
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: pkg
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
       - name: Set up Docker config
         run: |
           # The 'Maximize build space' step only makes the extra storage
@@ -184,7 +184,7 @@ jobs:
 
             "${makedeb_args[@]}"
       - name: Upload built package
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: "${{ matrix.target.distro }}-${{ matrix.target.display-arch }}"
           path: 'pkg/*.deb'
