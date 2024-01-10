@@ -88,6 +88,7 @@ blocked-distros = ["focal", "jammy", "bullseye"]
 [nodejs]
 
 [npm]
+blocked-distros = ["focal"]
 
 [parse-changelog]
 
