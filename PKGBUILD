@@ -3,7 +3,7 @@
 # Contributor: lordpipe <lordpipe@protonmail.com>
 
 pkgname=prismlauncher
-pkgver=8.0
+pkgver=8.1
 pkgrel=1
 pkgdesc='Minecraft launcher with ability to manage multiple instances.'
 arch=('i386' 'amd64' 'arm64' 'armhf' 'riscv64')
@@ -19,7 +19,7 @@ optdepends=('java-runtime=17: support for Minecraft versions >= 1.17'
 source=("https://github.com/PrismLauncher/PrismLauncher/releases/download/$pkgver/PrismLauncher-$pkgver.tar.gz"
         'gcc-armv7-fix.patch'
         'copyright')
-sha256sums=('462f35eeda6e107b5f23a97500accf43e4227a0fb40145b29d0895bcfe3372b0'
+sha256sums=('cdca88da4ab40625498af2f439f320c1d179d63d4b38a93d6e474651933587e6'
             '42394447d4b52c9329ff45f3c700c0eb2090a5803c5de010587d64294c37420f'
             '55f14ca1c20ba05785b248b3454ce2671149112d6b7c1a4e4fd24f4dde8f4c71')
 
