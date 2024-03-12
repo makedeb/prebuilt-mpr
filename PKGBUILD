@@ -1,6 +1,6 @@
 # Maintainer: Hunter Wittenborn <hunter@hunterwittenborn.com>
 pkgname=glab
-pkgver=1.36.0
+pkgver=1.37.0
 pkgrel=1
 pkgdesc='A GitLab CLI tool bringing GitLab to your command line'
 arch=('any')
