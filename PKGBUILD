@@ -1,7 +1,7 @@
 # Maintainer: Hunter Wittenborn <hunter@hunterwittenborn.com>
 pkgname=just
-pkgver=1.14.0
-pkgrel=2
+pkgver=1.25.2
+pkgrel=1
 pkgdesc='Just a command runner'
 arch=('any')
 makedepends=('cargo>=1.63')
