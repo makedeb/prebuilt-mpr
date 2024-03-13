@@ -1,6 +1,6 @@
 # Maintainer: Hunter Wittenborn <hunter@hunterwittenborn.com>
 pkgname=bitwarden-bin
-pkgver=2023.12.0
+pkgver=2024.3.0
 pkgrel=1
 pkgdesc='A secure and free password manager for all of your devices.'
 arch=('amd64')
