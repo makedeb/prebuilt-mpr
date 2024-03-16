@@ -5,9 +5,9 @@
 
 pkgname='discord'
 pkgver='0.0.45'
-pkgrel='1'
+pkgrel='2'
 pkgdesc="Chat for Communities and Friends"
-arch=('x86_64' 'amd64')
+arch=('amd64')
 _base_depends=('libc6' 'libasound2' 'libatomic1' 'libnotify4' 'libnspr4' 'libnss3' 'libstdc++6' 'libxss1' 'libxtst6')
 depends=("${_base_depends[@]}" 'libappindicator1')
 bullseye_depends=("${_base_depends[@]}" 'libayatana-appindicator1')
