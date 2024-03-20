@@ -1,6 +1,6 @@
 # Maintainer: Hunter Wittenborn <hunter@hunterwittenborn.com>
 pkgname=google-chrome-stable
-pkgver=122.0.6261.128
+pkgver=123.0.6312.58
 pkgrel=1
 pkgdesc='The web browser from Google'
 arch=('amd64')
@@ -49,7 +49,7 @@ url='https://www.google.com/chrome'
 options=('!strip')
 
 source=("${pkgname}.deb::https://dl.google.com/linux/chrome/deb/pool/main/g/${pkgname}/${pkgname}_${pkgver}-1_amd64.deb")
-sha256sums=('4b17587d6855dd9a6219699a80e33a2547e302653da731460d00e29d7af079ab')
+sha256sums=('cfe502ef052c5805fb90f22093c4bdba35b69fa1e5529d26df31d3bec0224e9b')
 
 package() {
     tar xf control.tar.xz
