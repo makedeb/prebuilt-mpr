@@ -1,6 +1,6 @@
 # Maintainer: Hunter Wittenborn <hunter@hunterwittenborn.com>
 pkgname=neovim
-pkgver=0.9.1
+pkgver=0.9.5
 pkgrel=1
 pkgdesc='Vim-fork focused on extensibility and usability'
 arch=('any')
