@@ -1,6 +1,6 @@
 # Maintainer: Hunter Wittenborn <hunter@hunterwittenborn.com>
 pkgname=chezmoi
-pkgver=2.47.3
+pkgver=2.47.4
 pkgrel=1
 pkgdesc='Manage your dotfiles across multiple diverse machines, securely.'
 arch=('any')
