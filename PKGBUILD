@@ -1,6 +1,6 @@
 # Maintainer: Hunter Wittenborn <hunter@hunterwittenborn.com>
 pkgname=glow
-pkgver=1.4.1
+pkgver=1.5.1
 pkgrel=1
 pkgdesc='A terminal based markdown reader'
 arch=('any')
