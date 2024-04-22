@@ -1,6 +1,6 @@
 # Maintainer: Hunter Wittenborn <hunter@hunterwittenborn.com>
 pkgname=hugo
-pkgver=0.125.2
+pkgver=0.125.3
 pkgrel=1
 pkgdesc="The world's fastest framework for building websites"
 arch=('any')
