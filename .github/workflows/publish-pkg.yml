@@ -1,0 +1,56 @@
+# Publish an MPR package.
+name: Publish Package
+on:
+  pull_request:
+    branches:
+      - pkg/*
+    types:
+      - closed
+
+jobs:
+  publish-pkg:
+    name: Publish Package
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+    steps:
+      - name: Setup Prebuilt-MPR APT repository
+        uses: makedeb/setup-makedeb@main
+        with:
+          makedeb-repo: false
+          pbmpr-repo: true
+      - name: Install ProGet CLI
+        run: sudo apt-get install pg -y
+      - name: Download artifacts
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          pr: "${{ github.event.pull_request.number }}"
+          workflow: build-pkg.yml
+          workflow_conclusion: ""
+      - name: Publish packages
+        run: |
+          for dir in *; do
+            pushd "${dir}"
+            component="$(echo "${dir}" | sed 's|-.*$||')"
+
+            for deb in *; do
+              echo "Uploading '${deb}' to '${component}'..."
+              pg upload-deb prebuilt-mpr "${component}" "${deb}"
+            done
+
+            popd
+          done
+        env:
+          PROGET_SERVER: "https://proget.${{ vars.MAKEDEB_URL }}"
+          PROGET_TOKEN: "${{ secrets.PROGET_TOKEN }}"
+      - name: Report status
+        if: always()
+        run: |
+          if [[ "${{ job.status }}" == 'success' ]]; then
+            msg='Package publishing has succeeded! :tada:'
+          else
+            msg=$'Package publishing has failed! :scream:\n\nView the [checks tab](https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}/checks) for more information.'
+          fi
+
+          gh -R "${{ github.repository }}" pr comment "${{ github.event.pull_request.number }}" -b "${msg}"
+        env:
+          GITHUB_TOKEN: "${{ secrets.GH_TOKEN_CUSTOM }}"
