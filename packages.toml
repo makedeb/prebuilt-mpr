@@ -59,6 +59,8 @@ blocked-distros = ["focal", "jammy", "bullseye"]
 [google-chrome-stable]
 blocked-archs = ["arm64"]
 
+[helix-bin]
+
 [hugo]
 
 [hyperfine]
