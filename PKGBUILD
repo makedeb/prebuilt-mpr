@@ -3,7 +3,7 @@
 # Contributor: lordpipe <lordpipe@protonmail.com>
 
 pkgname=prismlauncher
-pkgver=8.2
+pkgver=8.3
 pkgrel=1
 pkgdesc='Minecraft launcher with ability to manage multiple instances.'
 arch=('i386' 'amd64' 'arm64' 'armhf' 'riscv64')
@@ -11,7 +11,8 @@ url='https://prismlauncher.org'
 license=('GPL-3')
 depends=('libqt5svg5' 'qt5-image-formats-plugins' 'libqt5xml5' 'libqt5core5a' 'libqt5network5' 'libqt5gui5')
 makedepends=('scdoc' 'extra-cmake-modules' 'cmake' 'git' 'openjdk-17-jdk' 'zlib1g-dev' 'libgl1-mesa-dev' 'qtbase5-dev' 'qtchooser' 'qt5-qmake' 'qtbase5-dev-tools' 'gcc' 'g++')
-optdepends=('java-runtime=17: support for Minecraft versions >= 1.17'
+optdepends=('java-runtime=21: support for Minecraft versions >= 1.20.5'
+            's!java-runtime=17: support for Minecraft versions >= 1.17 and <= 1.20.4'
             's!java-runtime=8: support for Minecraft versions <= 1.16'
             's!gamemode: support for GameMode'
             's!flite: narrator support'
@@ -19,7 +20,7 @@ optdepends=('java-runtime=17: support for Minecraft versions >= 1.17'
 source=("https://github.com/PrismLauncher/PrismLauncher/releases/download/$pkgver/PrismLauncher-$pkgver.tar.gz"
         'gcc-armv7-fix.patch'
         'copyright')
-sha256sums=('80bc2f7657d9432c11039799fe85a31c284affa84a41cafb758ac32a96bd10fe'
+sha256sums=('4d587122f673ee4daea5aa098bd3da0f51989dbb600560146dd8a0375491cea0'
             '42394447d4b52c9329ff45f3c700c0eb2090a5803c5de010587d64294c37420f'
             '55f14ca1c20ba05785b248b3454ce2671149112d6b7c1a4e4fd24f4dde8f4c71')
 
