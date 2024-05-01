@@ -4,7 +4,7 @@
 # Contributor: Hunter Wittenborn <hunter@hunterwittenborn.com>
 
 pkgname='discord'
-pkgver='0.0.50'
+pkgver='0.0.51'
 pkgrel='1'
 pkgdesc="Chat for Communities and Friends"
 arch=('amd64')
@@ -14,7 +14,7 @@ bullseye_depends=("${_base_depends[@]}" 'libayatana-appindicator1')
 url="https://discord.com"
 license=('custom')
 source=("${pkgname}::https://dl.discordapp.net/apps/linux/${pkgver}/discord-${pkgver}.deb")
-b2sums=('ca1bee0569107aedd66e56ff46925438503a13d4bd21d8cc767aeae4eeb1e3f4787f94efdff2032e4d188469da744ef5cba6103206f5ddd89006cff87807aea8')
+b2sums=('bc8e6815db429e23626e936e1c5c43eef443fb6dd8c71eff752d8969fbcc607a4464f3a58552d4a65bdd4428992870f98cc7bfb8265b6041d4261eb153aa7f2f')
 
 package() {
     tar -xf 'data.tar.gz' -C "${pkgdir}"
