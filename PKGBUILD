@@ -1,6 +1,6 @@
 # Maintainer: Hunter Wittenborn <hunter@hunterwittenborn.com>
 pkgname=golang-go
-pkgver=1.22.2
+pkgver=1.22.3
 pkgrel=1
 epoch=2
 pkgdesc='The Go programming language'
