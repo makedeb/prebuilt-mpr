@@ -1,6 +1,6 @@
 # Maintainer: Hunter Wittenborn <hunter@hunterwittenborn.com>
 pkgname=fd
-pkgver=9.0.0
+pkgver=10.0.0
 pkgrel=1
 pkgdesc="A simple, fast and user-friendly alternative to 'find'"
 arch=('any')
