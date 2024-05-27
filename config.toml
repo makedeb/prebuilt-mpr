@@ -1,0 +1,33 @@
+changelog-seen = 2
+
+[llvm]
+# This makes builds quicker, which is beneficial for the already long Rust
+# builds.
+#
+# Disable this if you want to build LLVM for whatever reason.
+download-ci-llvm = "if-available"
+
+[build]
+extended = true
+tools = ["cargo", "rls", "clippy", "rustfmt", "analysis", "src", "rust-demangler"]
+sanitizers = false
+profiler = true
+vendor = false
+
+[install]
+prefix = "/usr"
+
+[rust]
+debuginfo-level = 2
+debuginfo-level-std = 2
+channel = "stable"
+description = "makedeb Package Repository"
+rpath = false
+verbose-tests = true
+dist-src = false
+deny-warnings = false
+backtrace-on-ice = true
+remap-debuginfo = true
+jemalloc = false
+
+[dist]
