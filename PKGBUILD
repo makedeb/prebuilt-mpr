@@ -13,7 +13,7 @@ pkgname=(
     'rust-src'
     'rustfmt'
 )
-pkgver=1.78.0
+pkgver=1.79.0
 pkgrel=1
 pkgdesc='The Rust programming language toolchain'
 arch=('any')
