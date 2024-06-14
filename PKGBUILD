@@ -1,6 +1,6 @@
 # Maintainer: Hunter Wittenborn <hunter@hunterwittenborn.com>
 pkgname=rclone
-pkgver=1.66.0
+pkgver=1.67.0
 pkgrel=1
 pkgdesc='rsync for cloud storage'
 arch=('any')
@@ -10,7 +10,7 @@ license=('MIT')
 url='https://rclone.org'
 
 source=("https://github.com/rclone/rclone/archive/refs/tags/v${pkgver}.tar.gz")
-sha256sums=('9249391867044a0fa4c5a948b46a03b320706b4d5c4d59db9d4aeff8d47cade2')
+sha256sums=('4ecf2e99eb98c9bb678be5b0cd28550c4a2a2d63b5f2ed66962a4f4b9b36c402')
 
 build () {
     cd "${pkgname}-${pkgver}/"
