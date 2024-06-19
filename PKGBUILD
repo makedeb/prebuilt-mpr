@@ -1,7 +1,7 @@
 # Maintainer: Hunter Wittenborn <hunter@hunterwittenborn.com>
 pkgname=deno
-pkgver=1.44.2
-pkgrel=3
+pkgver=1.44.3
+pkgrel=1
 pkgdesc='A modern runtime for JavaScript and TypeScript'
 arch=('any')
 makedepends=('cargo' 'cmake' 'git' 'protobuf-compiler')
