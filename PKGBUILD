@@ -14,7 +14,7 @@ pkgname=(
     'rustfmt'
 )
 pkgver=1.79.0
-pkgrel=1
+pkgrel=2
 pkgdesc='The Rust programming language toolchain'
 arch=('any')
 makedepends=(

@@ -1,5 +1,3 @@
-changelog-seen = 2
-
 [llvm]
 # This makes builds quicker, which is beneficial for the already long Rust
 # builds.
