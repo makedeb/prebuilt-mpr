@@ -73,8 +73,6 @@ blocked-archs = ["arm64"]
 
 [makedeb-alpha]
 
-[mari]
-
 [matrix-commander-rs]
 
 [maturin]
@@ -84,8 +82,6 @@ blocked-archs = ["arm64"]
 [minecraft-launcher]
 
 [mist]
-
-[mpr-cli]
 
 [mprocs]
 
