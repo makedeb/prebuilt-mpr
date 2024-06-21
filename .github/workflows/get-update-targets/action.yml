@@ -37,6 +37,10 @@ runs:
       id: list-targets
       shell: bash
       run: |
+        if [[ "${{ runner.debug }}" == '1' ]]; then
+          set -x
+        fi
+
         # Convert the packages listing into JSON.
         sudo apt-get install dasel -y
         pkg_list="$(curl -L 'https://github.com/makedeb/prebuilt-mpr/raw/main/packages.toml' | dasel -r toml -w json)"
@@ -139,7 +143,7 @@ runs:
             fi
 
             # The package lines.
-            mapfile -t apt_output < <(apt list '${{ inputs.pkgbase }}' 2> /dev/null | grep '^[a-z/]* ')
+            mapfile -t apt_output < <(apt list '${{ inputs.pkgbase }}' 2> /dev/null | grep '^[a-z/,-]* ')
 
             apt_version="$(echo "${apt_output[0]}" | awk '{print $2}')"
 
