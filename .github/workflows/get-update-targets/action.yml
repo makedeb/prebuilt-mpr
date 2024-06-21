@@ -37,6 +37,10 @@ runs:
       id: list-targets
       shell: bash
       run: |
+        if [[ "${{ runner.debug }}" == '1' ]]; then
+          set -x
+        fi
+
         # Convert the packages listing into JSON.
         sudo apt-get install dasel -y
         pkg_list="$(curl -L 'https://github.com/makedeb/prebuilt-mpr/raw/main/packages.toml' | dasel -r toml -w json)"
