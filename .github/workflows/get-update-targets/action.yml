@@ -68,7 +68,7 @@ runs:
 
         # If we're packaging for `dasel` we have to uninstall it, as it'll mess with our checks below otherwise.
         if [[ "${{ inputs.pkgbase }}" == 'dasel' ]]; then
-          sudo apt-get uninstall dasel -y
+          sudo apt-get purge dasel -y
         fi
 
         # We overwrite files in /etc/apt during this, so backup the directory for restoration after we're done.
