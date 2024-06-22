@@ -2,11 +2,11 @@
 _pkgname='cli'
 pkgname=npm
 pkgver=8.18.0
-pkgrel=1
+pkgrel=2
 pkgdesc='A JavaScript package manager'
 arch=('all')
 depends=('nodejs')
-makedepends=('git')
+makedepends=('git' 'python3-setuptools')
 url='https://docs.npmjs.com/cli'
 
 source=("${_pkgname}-${pkgver}::git+https://github.com/npm/${_pkgname}/#tag=v${pkgver}")
