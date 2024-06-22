@@ -1,20 +1,26 @@
 # Maintainer: Hunter Wittenborn <hunter@hunterwittenborn.com>
 _pkgname='node'
 pkgname=nodejs
-pkgver=18.8.0
-pkgrel=2
+pkgver=20.15.0
+pkgrel=1
 pkgdesc='Node.js JavaScript runtime'
 arch=('any')
 depends=(
+    'libbrotli1'
+    'libcares2'
+    'libnghttp2-14'
+    'libuv1t64'
+    'libssl3t64'
+    'zlib1g'
+)
+makedepends=(
+    'g++'
     'libbrotli-dev'
     'libc-ares-dev'
     'libnghttp2-dev'
     'libuv1-dev'
     'libssl-dev'
     'zlib1g-dev'
-)
-makedepends=(
-    'g++'
     'ninja-build'
     'python3'
 )
