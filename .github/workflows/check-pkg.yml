@@ -152,8 +152,10 @@ jobs:
             else
               pr_title='Package Update: `${{ inputs.pkgbase }}`'
             fi
-
-            gh pr create -B "${pkg_branch}" -H "${pkg_update_branch}" -t "${pr_title}" -b '' -r 'makedeb/prebuilt-mpr-reviewers'
+            
+            images="$(echo "${TARGETS}" | jq -r '.[] | ."image-tag" + ":" + ."display-arch"' | sed 's|.*|- `&`|')"
+            body="$(echo -e "The following distros have updates available:\n${images}\n\nDepending on previously failed builds or newly added distros, there may not be any file changes in this PR. If, however, this information doesn't appear to be correct, please reach out to a Prebuilt-MPR team member.")"
+            gh pr create -B "${pkg_branch}" -H "${pkg_update_branch}" -t "${pr_title}" -b "${body}" -r 'makedeb/prebuilt-mpr-reviewers'
           fi
 
           # Create a new workflow run (if needed) by creating an empty commit.
