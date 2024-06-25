@@ -101,6 +101,7 @@ blocked-distros = ["focal"]
 [polymc]
 
 [prismlauncher]
+blocked-distros = ["bullseye", "focal"]
 
 [prismlauncher-qt5]
 
