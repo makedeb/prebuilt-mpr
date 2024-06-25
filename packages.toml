@@ -102,6 +102,8 @@ blocked-distros = ["focal"]
 
 [prismlauncher]
 
+[prismlauncher-qt5]
+
 [proton-ge-custom-bin]
 blocked-distros = ["bullseye"]
 
