@@ -4,7 +4,7 @@
 
 pkgname=prismlauncher-qt5
 pkgver=8.4
-pkgrel=1
+pkgrel=2
 pkgdesc='Minecraft launcher with ability to manage multiple instances.'
 arch=('i386' 'amd64' 'arm64' 'armhf' 'riscv64')
 url='https://prismlauncher.org'
@@ -80,7 +80,7 @@ build() {
     cmake -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_INSTALL_PREFIX="/usr" \
           -DLauncher_BUILD_PLATFORM="debian" \
-          -DLauncher_APP_BINARY_NAME="${pkgname}" \
+          -DLauncher_APP_BINARY_NAME="prismlauncher" \
           -DLauncher_QT_VERSION_MAJOR=5 \
           -DENABLE_LTO=ON \
           -Bbuild -S.
