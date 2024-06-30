@@ -46,6 +46,9 @@ blocked-distros = ["focal", "jammy", "bullseye"]
 
 [fd]
 
+[fjordlauncher]
+blocked-distros = ["bullseye", "focal"]
+
 [golang-go]
 
 [golang-go-bin]
