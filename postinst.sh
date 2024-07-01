@@ -46,7 +46,7 @@ cat << EOF
  Need help?
 
  PrismLauncher Discord: https://discord.gg/ArX2nafFz2
- PrismLauncher Matrix: https://matrix.to/\#/\#prismlauncher:matrix.org
+ PrismLauncher Matrix: https://matrix.to/#/#prismlauncher:matrix.org
  PrismLauncher subreddit: https://www.reddit.com/r/PrismLauncher/
 
  Bug reports: https://github.com/PrismLauncher/PrismLauncher/issues
