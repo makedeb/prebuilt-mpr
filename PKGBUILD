@@ -1,8 +1,11 @@
 # Maintainer: Evan Goode <mail@evangoo.de>
+# Contributor: lordpipe <lordpipe@protonmail.com>
+# Contributor: Sefa Eyeoglu <conctact@scrumplex.net>
+# Contributor: dada513 <dada513@protonmail.com>
 
 pkgname=fjordlauncher
 pkgver=8.4.1
-pkgrel=1
+pkgrel=2
 pkgdesc='Prism Launcher fork with support for alternative auth servers'
 arch=('i386' 'amd64' 'arm64' 'armhf' 'riscv64')
 url='https://github.com/unmojang/FjordLauncher'
