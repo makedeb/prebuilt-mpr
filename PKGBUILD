@@ -1,10 +1,11 @@
 # Maintainer: Hunter Wittenborn <hunter@hunterwittenborn.com>
 pkgname=matrix-commander-rs
 pkgver=0.1.24
-pkgrel=2
+pkgrel=3
 pkgdesc='Simple but convenient CLI-based Matrix client app'
 arch=('any')
-makedepends=('cargo')
+depends=('libssl3')
+makedepends=('cargo' 'libssl-dev' 'pkg-config')
 license=('GPL-3.0')
 url='https://github.com/8go/matrix-commander-rs'
 
