@@ -1,6 +1,6 @@
 # Maintainer: Hunter Wittenborn <hunter@hunterwittenborn.com>
 pkgname=just
-pkgver=1.27.0
+pkgver=1.30.1
 pkgrel=1
 pkgdesc='Just a command runner'
 arch=('any')
@@ -19,8 +19,8 @@ build() {
 package() {
     cd "${pkgname}-${pkgver}/"
     install -Dm 755 "target/release/${pkgname}" "${pkgdir}/usr/bin/${pkgname}"
-    install -Dm 644 "completions/${pkgname}.bash" "${pkgdir}/usr/share/bash-completion/completions/just"
-    install -Dm 644 "man/${pkgname}.1" "${pkgdir}/usr/share/man/man1/${pkgname}.1"
+    "target/release/${pkgname}" --completions bash | install -Dm 644 /dev/stdin "${pkgdir}/usr/share/bash-completion/completions/just"
+    "target/release/${pkgname}" --man | install -Dm 644 /dev/stdin "${pkgdir}/usr/share/man/man1/${pkgname}.1"
 }
 
 # vim: set sw=4 expandtab:
