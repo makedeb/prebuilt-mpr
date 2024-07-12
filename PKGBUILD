@@ -1,6 +1,6 @@
 # Maintainer: Hunter Wittenborn <hunter@hunterwittenborn.com>
 pkgname=deno
-pkgver=1.45.0
+pkgver=1.45.1
 pkgrel=1
 pkgdesc='A modern runtime for JavaScript and TypeScript'
 arch=('any')
