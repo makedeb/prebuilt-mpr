@@ -1,6 +1,6 @@
 # Maintainer: Hunter Wittenborn <hunter@hunterwittenborn.com>
 pkgname=just
-pkgver=1.30.1
+pkgver=1.31.0
 pkgrel=1
 pkgdesc='Just a command runner'
 arch=('any')
