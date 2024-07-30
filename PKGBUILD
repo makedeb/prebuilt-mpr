@@ -4,21 +4,21 @@
 # Contributor: Hunter Wittenborn <hunter@hunterwittenborn.com>
 
 pkgname='discord'
-pkgver='0.0.54'
+pkgver='0.0.60'
 pkgrel='1'
 pkgdesc="Chat for Communities and Friends"
 arch=('amd64')
 _base_depends=('libc6' 'libasound2' 'libatomic1' 'libnotify4' 'libnspr4' 'libnss3' 'libstdc++6' 'libxss1' 'libxtst6')
-depends=("${_base_depends[@]}" 'libappindicator1')
-bullseye_depends=("${_base_depends[@]}" 'libayatana-appindicator1')
+depends=("${_base_depends[@]}")
+optdepends=('libappindicator1: Allow the app do display a menu in the system tray', 'libayatana-appindicator1: Allow the app to display a menu in the system tray')
 url="https://discord.com"
 license=('custom')
 source=("${pkgname}::https://dl.discordapp.net/apps/linux/${pkgver}/discord-${pkgver}.deb")
-b2sums=('b09aff50867682b007badd25044c0bcfd9ab99961c1befa834ca955e20872640909c8f540c0c9a6d7916ba42387123c981ad3cbccca756e670a96b3d46f22275')
+b2sums=('94485fe1b28cbc43971b17bd8a25e0716361e64c57e67956855ffdfafe245a3911f2bccbd403230224daa71771add36b5caf990934b2917d89335b65854e0972')
 
 package() {
+    tar -xf 'control.tar.gz'
     tar -xf 'data.tar.gz' -C "${pkgdir}"
-    mkdir -p "${pkgdir}/DEBIAN"
-    tar -xf 'control.tar.gz' -C "${pkgdir}/DEBIAN"
-    rm "${pkgdir}/DEBIAN/control"
+
+    postinst=src/postinst
 }
