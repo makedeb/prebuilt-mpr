@@ -4,8 +4,8 @@
 # Contributor: dada513 <dada513@protonmail.com>
 
 pkgname=fjordlauncher
-pkgver=8.4.1
-pkgrel=2
+pkgver=8.4.2
+pkgrel=1
 pkgdesc='Prism Launcher fork with support for alternative auth servers'
 arch=('i386' 'amd64' 'arm64' 'armhf' 'riscv64')
 url='https://github.com/unmojang/FjordLauncher'
@@ -22,7 +22,7 @@ optdepends=('java-runtime=21: support for Minecraft versions >= 1.20.5'
 source=("https://github.com/unmojang/FjordLauncher/releases/download/$pkgver/FjordLauncher-$pkgver.tar.gz"
         'gcc-armv7-fix.patch'
         'copyright')
-sha256sums=('a10fe260522b0af1e57711e17c8bba26ddb41a0ce08324d04c71b31a9f4e1880'
+sha256sums=('6a4290ed37615f37449659433338cb205813b34a9da7e30543ab3497dfd7282b'
             '42394447d4b52c9329ff45f3c700c0eb2090a5803c5de010587d64294c37420f'
             '276999f42582d6ac34410b4b008cbbcf03b2a93b587d3393038c37c991085c2b')
 postinst=postinst.sh
