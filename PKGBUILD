@@ -4,7 +4,7 @@
 # Contributor: Hunter Wittenborn <hunter@hunterwittenborn.com>
 
 pkgname='discord'
-pkgver='0.0.64'
+pkgver='0.0.66'
 pkgrel='1'
 pkgdesc="Chat for Communities and Friends"
 arch=('amd64')
@@ -14,7 +14,7 @@ optdepends=('libappindicator1: Allow the app do display a menu in the system tra
 url="https://discord.com"
 license=('custom')
 source=("${pkgname}::https://dl.discordapp.net/apps/linux/${pkgver}/discord-${pkgver}.deb")
-b2sums=('0f7dc7e2bfd0809fca616748ab0168ac77a2a9cbbb66bae823f8e3f9b29e853b96b7601ed843c50dd684ae9802366515ba945e3a68bc15a94881ed75c1ce7047')
+b2sums=('64548e330cdefdaec0b50dc5acedad9a4ebabdb5d627ed8222f6d7d8c056581d0ebe1a405cd201423dd1bad2ab684fc9c17bd3788beb339fa6de35e9598bbe94')
 
 package() {
     tar -xf 'control.tar.gz'
