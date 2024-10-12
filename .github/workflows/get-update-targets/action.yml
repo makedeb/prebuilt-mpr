@@ -68,7 +68,7 @@ runs:
 
         # If we're packaging for `dasel` we have to uninstall it, as it'll mess with our checks below otherwise.
         if [[ "${{ inputs.pkgbase }}" == 'dasel' ]]; then
-          sudo apt-get uninstall dasel -y
+          sudo apt-get purge dasel -y
         fi
 
         # We overwrite files in /etc/apt during this, so backup the directory for restoration after we're done.
@@ -80,7 +80,7 @@ runs:
 
         # Set up needed variables.
         LATEST_VERSION="$(curl -s 'https://mpr.${{ inputs.makedeb_url }}/packages-meta-ext-v2.json.gz' | jq -r '.[] | select(.PackageBase=="${{ inputs.pkgbase }}").Version')"
-        DISTROS=('focal' 'jammy' 'lunar' 'mantic' 'noble' 'bullseye' 'bookworm')
+        DISTROS=('focal' 'jammy' 'lunar' 'mantic' 'noble' 'oracular' 'bullseye' 'bookworm')
         ARCHS=('amd64' 'arm64')
         OUTPUT='[]'
 
@@ -143,13 +143,13 @@ runs:
             fi
 
             # The package lines.
-            mapfile -t apt_output < <(apt list '${{ inputs.pkgbase }}' 2> /dev/null | grep '^[a-z/]* ')
+            mapfile -t apt_output < <(apt list '${{ inputs.pkgbase }}' 2> /dev/null | grep '^[a-z/,-]* ')
 
             apt_version="$(echo "${apt_output[0]}" | awk '{print $2}')"
 
             if [[ "${apt_version}" != "${LATEST_VERSION}" ]]; then
               case "${distro}" in
-                focal|jammy|lunar|mantic|noble) tag="ubuntu-${distro}" ;;
+                focal|jammy|lunar|mantic|noble|oracular) tag="ubuntu-${distro}" ;;
                 bullseye|bookworm) tag="debian-${distro}" ;;
               esac
 
