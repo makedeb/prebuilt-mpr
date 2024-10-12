@@ -1,12 +1,15 @@
 [airshipper]
+blocked-distros = ["noble", "oracular"]
 
 [appimage-builder]
 
 [bat]
+blocked-distros = ["noble", "oracular"]
 
 [bats]
 
 [bitwarden-bin]
+blocked-distros = ["noble", "oracular"]
 blocked-archs = ["arm64"]
 
 [cargo-appimage]
@@ -17,6 +20,7 @@ blocked-distros = ["focal", "jammy", "bullseye"]
 [chezmoi]
 
 [cloudflared]
+blocked-distros = ["noble", "oracular"]
 
 [cloudflare-warp]
 
@@ -31,6 +35,7 @@ blocked-distros = ["focal", "jammy", "bullseye"]
 [discord]
 
 [docuum]
+blocked-distros = ["noble", "oracular"]
 
 [docker-compose]
 
@@ -41,10 +46,12 @@ blocked-distros = ["focal", "jammy", "bullseye"]
 [drone-runner-exec]
 
 [element-desktop-bin]
+blocked-distros = ["noble", "oracular"]
 
 [exa]
 
 [fd]
+blocked-distros = ["noble", "oracular"]
 
 [fjordlauncher]
 blocked-distros = ["bullseye", "focal"]
@@ -54,6 +61,7 @@ blocked-distros = ["bullseye", "focal"]
 [golang-go-bin]
 
 [gh]
+blocked-distros = ["noble", "oracular"]
 
 [glab]
 
@@ -69,6 +77,7 @@ blocked-archs = ["arm64"]
 [hyperfine]
 
 [just]
+blocked-distros = ["noble", "oracular"]
 
 [makedeb]
 
@@ -77,6 +86,7 @@ blocked-archs = ["arm64"]
 [makedeb-alpha]
 
 [matrix-commander-rs]
+blocked-distros = ["noble", "oracular"]
 
 [maturin]
 
@@ -100,6 +110,7 @@ blocked-distros = ["focal"]
 [pg]
 
 [polybar]
+blocked-distros = ["noble", "oracular"]
 
 [polymc]
 
@@ -114,6 +125,7 @@ blocked-distros = ["bullseye"]
 [rclone]
 
 [ripgrep]
+blocked-distros = ["noble", "oracular"]
 
 [rustc]
 blocked-archs = ["arm64"]
@@ -125,10 +137,12 @@ blocked-archs = ["arm64"]
 [sentry-cli]
 
 [starship]
+blocked-distros = ["noble", "oracular"]
 
 [tap]
 
 [toast]
+blocked-distros = ["noble", "oracular"]
 
 [tokei]
 
