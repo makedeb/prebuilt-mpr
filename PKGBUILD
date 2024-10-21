@@ -3,25 +3,44 @@
 # Contributor: dada513 <dada513@protonmail.com>
 
 pkgname=prismlauncher
-pkgver=8.4
-pkgrel=2
+pkgver=9.0
+pkgrel=1
 pkgdesc='Minecraft launcher with ability to manage multiple instances.'
 arch=('i386' 'amd64' 'arm64' 'armhf' 'riscv64')
 url='https://prismlauncher.org'
 license=('GPL-3')
-depends=('libqt6svg6' 'qt6-image-formats-plugins' 'libqt6xml6' 'libqt6core6' 'libqt6network6' 'libqt6core5compat6' 'libqt6widgets6')
-makedepends=('scdoc' 'extra-cmake-modules' 'cmake' 'git' 'openjdk-17-jdk' 'zlib1g-dev' 'libgl1-mesa-dev' 'qt6-base-dev' 'qtchooser' 'libqt6core5compat6-dev' 'gcc' 'g++')
-optdepends=('java-runtime=21: support for Minecraft versions >= 1.20.5'
-            's!java-runtime=17: support for Minecraft versions >= 1.17 and <= 1.20.4'
-            's!java-runtime=8: support for Minecraft versions <= 1.16'
+depends=('libqt6core5compat6'
+         'libqt6core6'
+         'libqt6network6'
+         'libqt6networkauth6'
+         'libqt6svg6'
+         'libqt6widgets6'
+         'libqt6xml6'
+         'qt6-image-formats-plugins')
+makedepends=('cmake'
+             'extra-cmake-modules'
+             'g++'
+             'gcc'
+             'git'
+             'libgl1-mesa-dev'
+             'libqt6core5compat6-dev'
+             'openjdk-17-jdk'
+             'qt6-base-dev'
+             'qt6-networkauth-dev'
+             'qtchooser'
+             'scdoc'
+             'zlib1g-dev')
+optdepends=('flite: narrator support'
+            'java-runtime=17: support for Minecraft versions >= 1.17 and <= 1.20.4'
+            'java-runtime=21: support for Minecraft versions >= 1.20.5'
+            'java-runtime=8: support for Minecraft versions <= 1.16'
+            'x11-xserver-utils: xrandr is needed to support Minecraft versions <= 1.12'
             's!gamemode: support for GameMode'
-            's!mangohud: HUD overlay for FPS and temperatures'
-            's!flite: narrator support'
-            's!x11-xserver-utils: xrandr is needed to support Minecraft versions <= 1.12')
+            's!mangohud: HUD overlay for FPS and temperatures')
 source=("https://github.com/PrismLauncher/PrismLauncher/releases/download/$pkgver/PrismLauncher-$pkgver.tar.gz"
         'gcc-armv7-fix.patch'
         'copyright')
-sha256sums=('a4df9059559df2e410ddf933e05fe4bffaa01631c6eeb55e63af4a2d0d719726'
+sha256sums=('8c3dae2469c70d460cd8e2747dc4e61c2e31c15f0754d9e41e23563ac544e2be'
             '42394447d4b52c9329ff45f3c700c0eb2090a5803c5de010587d64294c37420f'
             '55f14ca1c20ba05785b248b3454ce2671149112d6b7c1a4e4fd24f4dde8f4c71')
 postinst=postinst.sh
@@ -77,10 +96,11 @@ prepare() {
 
 build() {
     cd "${srcdir}/PrismLauncher-$pkgver"
-    cmake -DCMAKE_BUILD_TYPE=Debug \
+    cmake -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_INSTALL_PREFIX="/usr" \
           -DLauncher_BUILD_PLATFORM="debian" \
           -DLauncher_APP_BINARY_NAME="${pkgname}" \
+          -DLauncher_ENABLE_JAVA_DOWNLOADER=ON \
           -DENABLE_LTO=ON \
           -Bbuild -S.
     cmake --build build
