@@ -115,7 +115,7 @@ blocked-distros = ["noble", "oracular"]
 [polymc]
 
 [prismlauncher]
-blocked-distros = ["bullseye", "focal"]
+blocked-distros = ["bullseye", "focal", "jammy"]
 
 [prismlauncher-qt5]
 
