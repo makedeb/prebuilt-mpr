@@ -137,7 +137,6 @@ blocked-archs = ["arm64"]
 [sentry-cli]
 
 [starship]
-blocked-distros = ["noble", "oracular"]
 
 [tap]
 
