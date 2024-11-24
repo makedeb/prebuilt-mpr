@@ -46,7 +46,6 @@ blocked-distros = ["noble", "oracular"]
 [drone-runner-exec]
 
 [element-desktop-bin]
-blocked-distros = ["noble", "oracular"]
 
 [exa]
 
