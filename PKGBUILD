@@ -3,7 +3,7 @@
 epoch=2
 repology_pkgname=go
 pkgname=golang-go-bin
-pkgver=1.23.3
+pkgver=1.23.4
 pkgrel=1
 pkgdesc='The Go programming language'
 arch=(amd64 arm64)
@@ -16,8 +16,8 @@ url='https://github.com/golang/go'
 
 source_arm64=("https://go.dev/dl/go${pkgver}.linux-arm64.tar.gz")
 source_amd64=("https://go.dev/dl/go${pkgver}.linux-amd64.tar.gz")
-sha256sums_amd64=('a0afb9744c00648bafb1b90b4aba5bdb86f424f02f9275399ce0c20b93a2c3a8')
-sha256sums_arm64=('1f7cbd7f668ea32a107ecd41b6488aaee1f5d77a66efd885b175494439d4e1ce')
+sha256sums_amd64=('6924efde5de86fe277676e929dc9917d466efa02fb934197bc2eba35d5680971')
+sha256sums_arm64=('16e5017863a7f6071363782b1b8042eb12c6ca4f4cd71528b2123f0a1275b13e')
 
 extensions=('zipman')
 
