@@ -1,10 +1,10 @@
 # Maintainer: lordpipe <lordpipe@protonmail.com>
-# Maintainer: txtsd <mpr.makedeb@ihavea.quest>
+# Contributor: txtsd <mpr.makedeb@ihavea.quest>
 # Contributor: Sefa Eyeoglu <conctact@scrumplex.net>
 # Contributor: dada513 <dada513@protonmail.com>
 
 pkgname=prismlauncher-qt5
-pkgver=9.1
+pkgver=9.2
 pkgrel=1
 pkgdesc='Minecraft launcher with ability to manage multiple instances.'
 arch=('i386' 'amd64' 'arm64' 'armhf' 'riscv64')
@@ -49,7 +49,7 @@ source=(
   'gcc-armv7-fix.patch'
   'copyright'
 )
-sha256sums=('0aac56ec6b039e28f0605e7d86ebf602ee28dd9e4c7a16915ca974104954e832'
+sha256sums=('8702b40393b44a364633f1bab2a5c29abc634b5d053541fd8f85c4d1aaf50e83'
             '42394447d4b52c9329ff45f3c700c0eb2090a5803c5de010587d64294c37420f'
             '55f14ca1c20ba05785b248b3454ce2671149112d6b7c1a4e4fd24f4dde8f4c71')
 postinst=postinst.sh
