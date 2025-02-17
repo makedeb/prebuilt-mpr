@@ -1,6 +1,6 @@
 # Maintainer: Hunter Wittenborn <hunter@hunterwittenborn.com>
 pkgname='code-bin'
-pkgver='1.95.3'
+pkgver='1.97.2'
 pkgrel='1'
 pkgdesc="Code editing. Redefined."
 arch=('amd64')
