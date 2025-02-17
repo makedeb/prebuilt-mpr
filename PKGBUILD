@@ -5,7 +5,7 @@
 # Contributor: dada513 <dada513@protonmail.com>
 
 pkgname=fjordlauncher
-pkgver=9.2.1
+pkgver=9.2.2
 pkgrel=1
 pkgdesc='Prism Launcher fork with support for alternative auth servers'
 arch=('i386' 'amd64' 'arm64' 'armhf' 'riscv64')
@@ -50,7 +50,7 @@ source=(
   'gcc-armv7-fix.patch'
   'copyright'
 )
-sha256sums=('8c601a438fa6ba1deb5d9608f92a67995bd93e4f88a081f6ee5f71de0075c2f3'
+sha256sums=('f6b20f0ad8f3f1c8bcd1b49d380385b44bb564e6f9261d73c601a1b1fc8cf63f'
             '42394447d4b52c9329ff45f3c700c0eb2090a5803c5de010587d64294c37420f'
             'fefd606e959a9c6c8ba947a7d351b85f57f1d52b962bc3c674522b7a6fb48460')
 postinst=postinst.sh
