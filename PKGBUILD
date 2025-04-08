@@ -4,7 +4,7 @@
 # Contributor: dada513 <dada513@protonmail.com>
 
 pkgname=prismlauncher-qt5
-pkgver=9.2
+pkgver=9.4
 pkgrel=1
 pkgdesc='Minecraft launcher with ability to manage multiple instances.'
 arch=('i386' 'amd64' 'arm64' 'armhf' 'riscv64')
@@ -49,7 +49,7 @@ source=(
   'gcc-armv7-fix.patch'
   'copyright'
 )
-sha256sums=('8702b40393b44a364633f1bab2a5c29abc634b5d053541fd8f85c4d1aaf50e83'
+sha256sums=('77ab52239c2a2a9f77d7c4607e1d9cf40970f9240d2f5061b116a7b1b8fd0277'
             '42394447d4b52c9329ff45f3c700c0eb2090a5803c5de010587d64294c37420f'
             '55f14ca1c20ba05785b248b3454ce2671149112d6b7c1a4e4fd24f4dde8f4c71')
 postinst=postinst.sh
