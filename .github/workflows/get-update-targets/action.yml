@@ -80,7 +80,7 @@ runs:
 
         # Set up needed variables.
         LATEST_VERSION="$(curl -s 'https://mpr.${{ inputs.makedeb_url }}/packages-meta-ext-v2.json.gz' | jq -r '.[] | select(.PackageBase=="${{ inputs.pkgbase }}").Version')"
-        DISTROS=('focal' 'jammy' 'lunar' 'mantic' 'noble' 'oracular' 'bullseye' 'bookworm')
+        DISTROS=('focal' 'jammy' 'noble' 'oracular' 'bullseye' 'bookworm')
         ARCHS=('amd64' 'arm64')
         OUTPUT='[]'
 
@@ -149,7 +149,7 @@ runs:
 
             if [[ "${apt_version}" != "${LATEST_VERSION}" ]]; then
               case "${distro}" in
-                focal|jammy|lunar|mantic|noble|oracular) tag="ubuntu-${distro}" ;;
+                focal|jammy|noble|oracular) tag="ubuntu-${distro}" ;;
                 bullseye|bookworm) tag="debian-${distro}" ;;
               esac
 
