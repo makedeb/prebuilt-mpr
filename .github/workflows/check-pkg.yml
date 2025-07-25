@@ -111,7 +111,7 @@ jobs:
           cd ../gh-repo
 
           # Get the package's version.
-          version="$(curl "https://mpr.${{ vars.MAKEDEB_URL }}/packages-meta-ext-v2.json.gz" | jq -r '[.[] | select(.PackageBase=="${{ inputs.pkgbase }}")][0].Version')"
+          version="$(curl "https://mpr.${{ vars.MAKEDEB_URL }}/packages-meta-ext-v2.json.gz" | gzip -d | jq -r '[.[] | select(.PackageBase=="${{ inputs.pkgbase }}")][0].Version')"
 
           # If there's any changed files, add them and push.
           git add .
