@@ -1,6 +1,6 @@
 # Maintainer: Hunter Wittenborn <hunter@hunterwittenborn.com>
 pkgname=rustup
-pkgver=1.25.2
+pkgver=1.27.1
 pkgrel=3
 pkgdesc='The rust toolchain installer'
 arch=('any')
