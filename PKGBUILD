@@ -5,7 +5,7 @@
 
 pkgname=prismlauncher
 pkgver=9.4
-pkgrel=1
+pkgrel=2
 pkgdesc='Minecraft launcher with ability to manage multiple instances.'
 arch=('i386' 'amd64' 'arm64' 'armhf' 'riscv64')
 url='https://prismlauncher.org'
@@ -28,7 +28,6 @@ makedepends=(
   'git'
   'libgl1-mesa-dev'
   'libqt6core5compat6-dev'
-  'openjdk-17-jdk'
   'qt6-base-dev'
   'qt6-networkauth-dev'
   'qtchooser'
@@ -46,10 +45,15 @@ optdepends=(
 )
 source=(
   "https://github.com/PrismLauncher/PrismLauncher/releases/download/${pkgver}/PrismLauncher-${pkgver}.tar.gz"
+  # Debian no longer supports Java 17, so we grab the small Java wrappers as blobs from PrismLauncher's github releases instead
+  # In the future this may be distributed at runtime via the PrismLauncher official meta server instead
+  "https://github.com/PrismLauncher/PrismLauncher/releases/download/${pkgver}/PrismLauncher-Linux-Qt6-Portable-${pkgver}.tar.gz"
   'gcc-armv7-fix.patch'
   'copyright'
 )
+noextract=("PrismLauncher-Linux-Qt6-Portable-${pkgver}.tar.gz")
 sha256sums=('77ab52239c2a2a9f77d7c4607e1d9cf40970f9240d2f5061b116a7b1b8fd0277'
+            '269056b281a36c872c7d904b3483c046a9766cf1a65618338e2edcd48695bc1d'
             '42394447d4b52c9329ff45f3c700c0eb2090a5803c5de010587d64294c37420f'
             '55f14ca1c20ba05785b248b3454ce2671149112d6b7c1a4e4fd24f4dde8f4c71')
 postinst=postinst.sh
@@ -105,6 +109,8 @@ prepare() {
 
 build() {
   cd "${srcdir}/PrismLauncher-${pkgver}"
+  sed -i '/^add_subdirectory(libraries\/launcher)/d' CMakeLists.txt
+  sed -i '/^add_subdirectory(libraries\/javacheck)/d' CMakeLists.txt
   cmake -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX="/usr" \
     -DLauncher_BUILD_PLATFORM="debian" \
@@ -125,6 +131,7 @@ package() {
   DESTDIR="${pkgdir}" cmake --install .
   mkdir -p "${pkgdir}/usr/share/doc/${pkgname}"
   cp -v "${srcdir}/copyright" "${pkgdir}/usr/share/doc/${pkgname}/copyright"
+  tar -vxf "${srcdir}/PrismLauncher-Linux-Qt6-Portable-9.4.tar.gz" --strip-components=2 -C "${pkgdir}/usr/share/PrismLauncher" share/PrismLauncher/NewLaunch.jar share/PrismLauncher/JavaCheck.jar share/PrismLauncher/NewLaunchLegacy.jar
 }
 
 # vim: set sw=2 expandtab:
